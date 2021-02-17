@@ -14,9 +14,14 @@ app.use(bodyParser.urlencoded({extended: false,}));
 app.use("/api", UserRoute );
 
 
-
+/*
 app.get('/', requireAuth, (req, res) => {
   res.send(`Your id: ${req.user._id}`);
+});
+*/
+
+app.get('/', function (req, res) {
+  res.send(`Howdy, ${req.ip}`);
 });
 
 app.listen(3000, function () {
