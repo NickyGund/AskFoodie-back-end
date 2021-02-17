@@ -1,6 +1,6 @@
 import expressJwt from 'express-jwt';
 import { Router } from 'express';
-import {login, register, checkAuth} from './user.controller';
+import {login, register, checkAuth} from './user.controller.js';
 
 const secret = 'This is my secret';
 const routes = new Router();

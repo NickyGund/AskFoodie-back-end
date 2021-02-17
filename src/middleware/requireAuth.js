@@ -1,10 +1,10 @@
-const jwt = require('jsonwebtoken');
-const mongoose = require('mongoose');
-import User from "../User/user.schema";
+import jwt from 'jsonwebtoken';
+import mongoose from 'mongoose';
+import User from "../User/user.schema.js";
 
 const SECRET = 'This is my secret'
 
-module.exports = (req, res, next) => {
+export default (req, res, next) => {
   const { authorization } = req.headers;
   // authorization === 'Bearer laksjdflaksdjasdfklj'
 
