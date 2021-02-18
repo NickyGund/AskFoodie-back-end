@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 
 //connect app to the database on Mlab
 export default () => {
-  const url = process.env.ATLAS_URL;
+  const url = process.env.LOCAL_URL;
     mongoose.Promise = global.Promise;
     mongoose.connect(url, {
         useCreateIndex: true,
