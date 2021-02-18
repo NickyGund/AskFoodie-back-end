@@ -1,5 +1,5 @@
-import User from "./user.schema";
-import {registerValidation, loginValidation} from "./validation"
+import User from "./user.schema.js";
+import {registerValidation, loginValidation} from "./validation.js"
 
 
 
