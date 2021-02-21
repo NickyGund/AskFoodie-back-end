@@ -12,8 +12,7 @@
     "express": "^4.17.1",
     "express-jwt": "^5.3.3",
     "jsonwebtoken": "^8.5.1",
-    "mongoose": "^5.11.17",
-    "node": "^14.15.5"
+    "mongoose": "^5.11.17"
   },
   "devDependencies": {
     "@babel/core": "^7.12.16",
@@ -24,7 +23,7 @@
   "type": "module",
   "scripts": {
     "start": "node --experimental-modules src/index.js",
-    "start-dev": "nodemon --experimental-modules src/index.js",
+    "start-dev": "nodemon --exec babel-node src/index migrate-mongo up",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
