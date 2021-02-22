@@ -33,14 +33,12 @@ const userSchema = new Schema({
         required: [true, 'Password is required'],
         trim: true,
         minLength: [6, 'Password needs to be longer']
-    },
-    birthdate: {
-      type: Date,
-      trim: true,
-  },
+    }
+
+  ,
 
    
-}, {timestamps: true});
+}, {timestamps: true, strict:false});
 
 
 
