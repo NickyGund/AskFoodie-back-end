@@ -33,9 +33,13 @@ const userSchema = new Schema({
         required: [true, 'Password is required'],
         trim: true,
         minLength: [6, 'Password needs to be longer']
-    }
+    },
+    birthdate: {
+      type: Date,
+      trim: true,        
+      required: [true, 'Password is required'],
 
-  ,
+  },
 
    
 }, {timestamps: true, strict:false});
@@ -83,7 +87,7 @@ userSchema.methods = {
             }
       
             if (!isMatch) {
-              return reject(false);
+              return reject('incorrect password');
             }
       
             resolve(true);
