@@ -40,6 +40,18 @@ const userSchema = new Schema({
       required: [true, 'Password is required'],
 
   },
+    profileInfo: {
+
+      distance: Number,
+      foodTypes: Array,
+      price: String,
+      dining: Number,
+    },
+    signedIn:{
+      type: Boolean,
+      default:false,
+      required: [true]
+    }
 
    
 }, {timestamps: true, strict:false});
@@ -73,7 +85,8 @@ userSchema.methods = {
             _id: this._id,
             userName: this.userName,
             password:this.password,
-            token: jwt.sign({sub: this._id}, SECRET)
+            token: jwt.sign({sub: this._id}, SECRET),
+            signedIn: this.signedIn
         }
     },
 

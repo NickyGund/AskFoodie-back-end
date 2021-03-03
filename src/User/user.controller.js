@@ -19,6 +19,7 @@ export const login = async (req, res) => {
         }
        
         await user.comparePassword(password)
+        await user.updateOne({signedIn:true})
         res.json({error: false, data: user.toJSON()})
 
     }catch(e) {
@@ -61,4 +62,12 @@ export const checkAuth = async (req, res) => {
     }catch(e) {
         return res.json({error: true, data: e});
     }
+}
+
+export const addProfileInfo = async (req, res) => {
+    const update = req.body
+    const email = req.headers.email
+    const user = await User.findOneAndUpdate({email}, {profileInfo : update});
+    return res.json(user)
+    
 }
