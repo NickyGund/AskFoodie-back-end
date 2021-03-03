@@ -86,7 +86,8 @@ userSchema.methods = {
             userName: this.userName,
             password:this.password,
             token: jwt.sign({sub: this._id}, SECRET),
-            signedIn: this.signedIn
+            signedIn: this.signedIn,
+            email: this.email
         }
     },
 

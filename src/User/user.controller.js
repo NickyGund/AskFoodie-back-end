@@ -65,9 +65,11 @@ export const checkAuth = async (req, res) => {
 }
 
 export const addProfileInfo = async (req, res) => {
+    console.log(req.body)
     const update = req.body
+    console.log(req.headers.email + 'EMAIL')
     const email = req.headers.email
     const user = await User.findOneAndUpdate({email}, {profileInfo : update});
-    return res.json(user)
+    return res.json({data:user})
     
 }
