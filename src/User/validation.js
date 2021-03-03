@@ -10,7 +10,7 @@ import  Joi from '@hapi/joi'
         lastName: Joi.string(),
         password: Joi.string().required().min(6),
         birthdate:Joi.date().required(),
-        signedIn: Joi.boolean().required()
+        signedIn: Joi.boolean()
     })
 
     return schema.validate(data)
