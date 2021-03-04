@@ -8,7 +8,9 @@ import  Joi from '@hapi/joi'
         userName:Joi.string().required(),
         firstName: Joi.string(),
         lastName: Joi.string(),
-        password: Joi.string().required().min(6)
+        password: Joi.string().required().min(6),
+        birthdate:Joi.date().required(),
+        signedIn: Joi.boolean()
     })
 
     return schema.validate(data)
