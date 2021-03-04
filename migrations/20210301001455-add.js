@@ -1,9 +1,6 @@
 module.exports = {
   async up(db, client) {
-    // TODO write your migration here.
-    // See https://github.com/seppevs/migrate-mongo/#creating-a-new-migration-script
-    // Example:
-    await db.collection('users').update({}, {$set: {"birthdate": new Date()}}, {upsert:false,
+    await db.collection('users').update({}, {$set: {"signedIn": false}}, {upsert:false,
       multi:true});
   },
 
