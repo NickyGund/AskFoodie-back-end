@@ -125,7 +125,8 @@ export async function find(req, res) {
                         name: 'Vivi Bubble Tea/KBG',
                         place_id: 'ChIJ_UDANVHGw4kRyF7OUJ3Uxrw'
                     }
-                ]
+                ],
+                status: "OK"
             }
         };
 
