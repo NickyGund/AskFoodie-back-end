@@ -4,7 +4,7 @@ import { find, getInfo } from "./places.controller.js"
 
 var router = require('express').Router();
 
-router.get("/find", find)
+router.get("/find/:latitude/:longitude", find)
 router.get("/info", getInfo)
 
 module.exports = router;
