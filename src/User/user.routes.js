@@ -8,6 +8,6 @@ const routes = new Router();
 routes.post('/login', login);
 routes.post('/register', register);
 routes.get('/auth', expressJwt({ secret }), checkAuth);
-routes.post('/addProfileInfo', addProfileInfo)
+routes.post('/addProfileInfo', addProfileInfo);
 
 export default routes;
