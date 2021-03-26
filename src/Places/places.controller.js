@@ -70,27 +70,44 @@ function getParams(location, radius, keyword, minprice) {
 
 // Finds a nearby place given a query
 export async function find(req, res) {
+    // Get email from query
     if (!("email" in req.headers)) {
         console.log(`Failed to get a email from headers`);
         return res.status(400).send(`Failed to get email from headers`);
     }
 
+    // Get user from email
     var user = await User.findOne({ email: req.headers.email })
 
-    if (!("latitude" in req.params) || !("longitude" in req.params)) {
+    // Get location from query
+    if (!("latitude" in req.query) || !("longitude" in req.query)) {
         console.log(`Failed to get a location from request`);
         return res.status(400).send(`Failed to get location from request`);
     }
+    var latitude = req.query.latitude;
+    var longitude = req.query.longitude;
 
-    var latitude = parseFloat(req.params.latitude);
-    var longitude = parseFloat(req.params.longitude);
     if (isNaN(latitude) || isNaN(longitude)) {
         console.log(`Failed to get a location from request`);
         return res.status(400).send(`Failed to get location from request`);
     }
 
-    var location = `${latitude}, ${longitude}`;
+    /*
+    // Get filters from query
+    if (!("filters" in req.query) || !("foodFilters" in req.query)) {
+        console.log(`Failed to get a location from request`);
+        return res.status(400).send(`Failed to get location from request`);
+    }
+    var filters = req.query.filters;
+    var foodFilters = req.query.foodFilters;
 
+    if (isNaN(filters) || isNaN(foodFilters)) {
+        console.log(`Failed to get a location from request`);
+        return res.status(400).send(`Failed to get location from request`);
+    }
+    */
+
+    var location = `${latitude}, ${longitude}`;
     var radius = getRadius(user.profileInfo);
     var keyword = getKeyword(user.profileInfo)
     var minprice = getPrice(user.profileInfo);
@@ -114,12 +131,13 @@ export async function find(req, res) {
             }
         };
 
+        /*
         // requests a place with the text query from google maps
         placeDataRequest = await axios({
             method: "get",
             url: `${nearbysearchURL}/${outputType}`,
             params: params
-        });
+        });*/
     } catch(error) {
         console.log(`Failed to get a place from Google API: ${error}`);
         return res.status(503).send(`Server failed to get a place from Google API: ${error}`);
