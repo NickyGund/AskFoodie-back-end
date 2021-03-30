@@ -51,6 +51,11 @@ const userSchema = new Schema({
       type: Boolean,
       default:false,
       required: [true]
+    },
+    admin:{
+      type: Boolean,
+      default:false,
+      required: [true]
     }
 
    
@@ -87,7 +92,8 @@ userSchema.methods = {
             password:this.password,
             token: jwt.sign({sub: this._id}, SECRET),
             signedIn: this.signedIn,
-            email: this.email
+            email: this.email,
+            admin: this.admin
         }
     },
 
