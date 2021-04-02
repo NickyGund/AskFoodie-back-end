@@ -24,3 +24,19 @@ export const addChildComment = async (req, res) => {
         res.json({error: true, data: e})
     }
 }
+
+export const findComments = async (req, res) => {
+    var commentRequest;
+    console.log(req.body);
+    try{
+        commentRequest = await Base.find({poster: req.body.poster});
+        //console.log(res.data);
+        //console.log(commentRequest)
+        console.log({data:commentRequest});
+        return res.json({data:commentRequest});
+    }
+    catch(error){
+        console.log(`Failed to get commments from the backend: ${error}`);  
+        res.json({error: true, data: error})
+    }
+}
