@@ -19,37 +19,54 @@ function getKeyword(profileInfo) {
 
 function getPrice(profileInfo) {
     // Note 0 is least expensive, 4 is most
-    if ("price" in profileInfo) {
+    // Front-end sends '$', '$$', and/or '$$$'
+    var min = 4;
+    var max = 0;
+    for (var index = 0; index < filters.length; index++) {
+        var filterItem = filters[index]
+        if (filterItem == "$") {
+            if (min > 0) min = 0; // If min is higher than 0, lower it to 0
+            if (max < 1) max = 1 // If max is lower than 1, raise it to 1
+        } else if (filterItem == "$$") {
+            if (min > 2) min = 2;
+            if (max < 3) max = 3;
+        } else if (filterItem == "$$$") {
+            if (min > 4) min = 4;
+            if (max < 4) max = 4;
+        }
+    }
+
+    if (min <= max) { // If price has been specified in filters
+        return [min, max]
+    }
+
+    if ("price" in profileInfo) { // If min price has been specified in profile info
         if (profileInfo.price == "none") {
             return undefined;
         } else {
-            return profileInfo.price.length - 1;
+            return [profileInfo.price.length - 1, 4];
         }
     } else {
         return undefined;
     }
 }
 
-function getRadius(profileInfo) {
-    // Max 50000 meters
-    if ("distance" in profileInfo) {
-        if (profileInfo.distance > 50) {
-            profileInfo.distance = 50;
-        } else if (profileInfo.distance < 0) {
-            profileInfo.distance = 0;
+function getRadius(filters, profileInfo) {
+    var distance = 50000;
+    for (var index = 0; index < filters.length; index++) {
+        var filterItem = filters[index]
+        if (filterItem == "Under 5 km") {
+            if (distance > 5000) distance = 5000;
+        } else if (filterItem == "Under 10 km") {
+            if (distance > 10000) distance = 10000;
+        } else if (filterItem == "Under 20 km") {
+            if (distance > 20000) distance = 20000;
         }
-
-        if (profileInfo.distance == 0) {
-            return 50000;
-        } else {
-            return profileInfo.distance * 1000;
-        }
-    } else {
-        return 50000;
     }
+    return distance;
 }
 
-function getParams(location, radius, keyword, minprice) {
+function getParams(location, radius, keyword, price) {
     var params = {};
 
     params.key = process.env.GOOGLE_API_KEY;
@@ -60,9 +77,9 @@ function getParams(location, radius, keyword, minprice) {
     if (keyword != undefined)
         params.keyword = keyword;
 
-    if (minprice != undefined) {
-        params.minprice = minprice;
-        params.maxprice = 4;
+    if (price != undefined) {
+        params.minprice = price[0];
+        params.maxprice = price[1];
     }
 
     return params;
@@ -92,27 +109,20 @@ export async function find(req, res) {
         return res.status(400).send(`Failed to get location from request`);
     }
 
-    /*
-    // Get filters from query
-    if (!("filters" in req.query) || !("foodFilters" in req.query)) {
-        console.log(`Failed to get a location from request`);
-        return res.status(400).send(`Failed to get location from request`);
+    if (!( ("filters" in req.query) || ("foodFilters" in req.query) )) {
+        console.log(`Failed to get a location from Client IP: ${error}`);
+        return res.status(503).send(`Server failed to get a location from Client IP: ${error}`);
     }
-    var filters = req.query.filters;
-    var foodFilters = req.query.foodFilters;
+    
+    // Get filters and foodFilters from query
+    var filters = JSON.parse(req.query.filters);
+    var foodFilters = JSON.parse(req.query.foodFilters);
 
-    if (isNaN(filters) || isNaN(foodFilters)) {
-        console.log(`Failed to get a location from request`);
-        return res.status(400).send(`Failed to get location from request`);
-    }
-    */
+    var radius = getRadius(filters, user.profileInfo);
+    var keyword = getKeyword(foodFilters, user.profileInfo)
+    var price = getPrice(filters, user.profileInfo);
 
-    var location = `${latitude}, ${longitude}`;
-    var radius = getRadius(user.profileInfo);
-    var keyword = getKeyword(user.profileInfo)
-    var minprice = getPrice(user.profileInfo);
-
-    var params = getParams(location, radius, keyword, minprice);
+    var params = getParams(latlon, radius, keyword, price);
     console.log(params);
 
     var placeDataRequest;
