@@ -5,10 +5,20 @@ const outputType = "json";
 
 const nearbysearchURL = "https://maps.googleapis.com/maps/api/place/nearbysearch";
 
-const getPlaceDetailsURL = "https://maps.googleapis.com/maps/api/place/details";
 const infoFields = "name,icon,formatted_address,url,formatted_phone_number,website";
 
-function getKeyword(profileInfo) {
+function getKeyword(foodFilters, profileInfo) {
+    if (foodFilters.length > 1) {
+        var foodTypes = `${foodFilters[0]}`
+        for (var index = 1; index < foodFilters.length; index++) {
+            var filterItem = foodFilters[index];
+            foodTypes += ` OR ${filterItem}`;
+        }
+        return `${foodTypes}`;
+    } else if (foodFilters.length == 1) {
+        return `${foodFilters[0]}`
+    }
+
     if (("foodTypes" in profileInfo) && (profileInfo.foodTypes.length > 0)) {
         var foodTypes = profileInfo.foodTypes.join(" OR ");
         return `${foodTypes}`;
@@ -17,7 +27,7 @@ function getKeyword(profileInfo) {
     }
 }
 
-function getPrice(profileInfo) {
+function getPrice(filters, profileInfo) {
     // Note 0 is least expensive, 4 is most
     // Front-end sends '$', '$$', and/or '$$$'
     var min = 4;
@@ -118,11 +128,12 @@ export async function find(req, res) {
     var filters = JSON.parse(req.query.filters);
     var foodFilters = JSON.parse(req.query.foodFilters);
 
+    var location = `${latitude}, ${longitude}`;
     var radius = getRadius(filters, user.profileInfo);
     var keyword = getKeyword(foodFilters, user.profileInfo)
     var price = getPrice(filters, user.profileInfo);
 
-    var params = getParams(latlon, radius, keyword, price);
+    var params = getParams(location, radius, keyword, price);
     console.log(params);
 
     var placeDataRequest;
@@ -149,13 +160,12 @@ export async function find(req, res) {
             }
         };
 
-        /*
         // requests a place with the text query from google maps
         placeDataRequest = await axios({
             method: "get",
             url: `${nearbysearchURL}/${outputType}`,
             params: params
-        });*/
+        });
     } catch(error) {
         console.log(`Failed to get a place from Google API: ${error}`);
         return res.status(503).send(`Server failed to get a place from Google API: ${error}`);
