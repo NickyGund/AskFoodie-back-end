@@ -8,41 +8,12 @@ const nearbysearchURL = "https://maps.googleapis.com/maps/api/place/nearbysearch
 const getPlaceDetailsURL = "https://maps.googleapis.com/maps/api/place/details";
 const infoFields = "name,icon,formatted_address,url,formatted_phone_number,website";
 
-const getPhotoURL = "https://maps.googleapis.com/maps/api/place/photo";
-
-const getLonLatURL = "http://ip-api.com/json/";
-const getMyIpURL = "http://ipv4bot.whatismyipaddress.com"
-
 function getKeyword(profileInfo) {
     if (("foodTypes" in profileInfo) && (profileInfo.foodTypes.length > 0)) {
         var foodTypes = profileInfo.foodTypes.join(" OR ");
         return `${foodTypes}`;
     } else {
         return undefined;
-    }
-}
-
-async function getLatLon(ip) {
-    // requests location with the client's ip address
-    var locationData = await axios({
-        method: "get",
-        url: `${getLonLatURL}/${ip}`
-    });
-    locationData = locationData.data;
-
-    if (locationData.status == "success") {
-        return `${locationData.lat}, ${locationData.lon}`;
-    } else {
-        if (locationData.message == "private range") { // If we're using a localhost, recurse using the server's ip
-            console.log("We're using LAN, so getting the server's ip:");
-            var ip = await axios({
-                method: "get",
-                url: getMyIpURL
-            });
-            return await getLatLon(ip.data);
-        } else {
-            throw(locationData.message);
-        }
     }
 }
 
@@ -99,21 +70,49 @@ function getParams(location, radius, keyword, minprice) {
 
 // Finds a nearby place given a query
 export async function find(req, res) {
-    var user = await User.findOne({ email: req.headers.email })
-
-    var latlon;
-    try {
-        latlon = await getLatLon(req.headers['x-forwarded-for'] || req.connection.remoteAddress);
-    } catch(error) {
-        console.log(`Failed to get a location from Client IP: ${error}`);
-        return res.status(503).send(`Server failed to get a location from Client IP: ${error}`);
+    // Get email from query
+    if (!("email" in req.headers)) {
+        console.log(`Failed to get a email from headers`);
+        return res.status(400).send(`Failed to get email from headers`);
     }
 
+    // Get user from email
+    var user = await User.findOne({ email: req.headers.email })
+
+    // Get location from query
+    if (!("latitude" in req.query) || !("longitude" in req.query)) {
+        console.log(`Failed to get a location from request`);
+        return res.status(400).send(`Failed to get location from request`);
+    }
+    var latitude = req.query.latitude;
+    var longitude = req.query.longitude;
+
+    if (isNaN(latitude) || isNaN(longitude)) {
+        console.log(`Failed to get a location from request`);
+        return res.status(400).send(`Failed to get location from request`);
+    }
+
+    /*
+    // Get filters from query
+    if (!("filters" in req.query) || !("foodFilters" in req.query)) {
+        console.log(`Failed to get a location from request`);
+        return res.status(400).send(`Failed to get location from request`);
+    }
+    var filters = req.query.filters;
+    var foodFilters = req.query.foodFilters;
+
+    if (isNaN(filters) || isNaN(foodFilters)) {
+        console.log(`Failed to get a location from request`);
+        return res.status(400).send(`Failed to get location from request`);
+    }
+    */
+
+    var location = `${latitude}, ${longitude}`;
     var radius = getRadius(user.profileInfo);
     var keyword = getKeyword(user.profileInfo)
     var minprice = getPrice(user.profileInfo);
 
-    var params = getParams(latlon, radius, keyword, minprice);
+    var params = getParams(location, radius, keyword, minprice);
     console.log(params);
 
     var placeDataRequest;
@@ -140,12 +139,13 @@ export async function find(req, res) {
             }
         };
 
+        /*
         // requests a place with the text query from google maps
         placeDataRequest = await axios({
             method: "get",
             url: `${nearbysearchURL}/${outputType}`,
             params: params
-        });
+        });*/
     } catch(error) {
         console.log(`Failed to get a place from Google API: ${error}`);
         return res.status(503).send(`Server failed to get a place from Google API: ${error}`);
