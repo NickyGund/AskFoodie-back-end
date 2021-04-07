@@ -28,3 +28,18 @@ export const loginValidation = (data) => {
     return schema.validate(data)
 }
 
+export const emailValidation = data => {
+    const schema = Joi.object({
+      email: Joi.string().required().email(),
+    })
+  
+    return schema.validate(data)
+  }
+  
+  
+export const passwordValidation = data => {
+    const schema = Joi.object({
+      password: Joi.string().required().min(6),
+    })
+    return schema.validate(data)
+}
