@@ -5,6 +5,8 @@ import expressJwt from 'express-jwt';
 import bodyParser from 'body-parser';
 import UserRoute from './User/user.routes.js';
 import PlacesRouter from "./Places/places.routes.js"
+import RestaurantRoute from "./Restaurant/restaurant.routes.js"
+import CommentRoute from "./Comment/comment.routes.js"
 import requireAuth from "./middleware/requireAuth.js"
 
 const secret = 'This is my secret';
@@ -17,6 +19,8 @@ app.set('trust proxy', true)
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false,}));
 app.use("/api", UserRoute );
+app.use("/api", RestaurantRoute);
+app.use("/api", CommentRoute);
 app.use('/api/places', expressJwt({ secret }), PlacesRouter);
 
 app.get('/', requireAuth, (req, res) => {
