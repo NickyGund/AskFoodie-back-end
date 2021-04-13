@@ -1,10 +1,11 @@
 // https://github.com/mochajs/
 import User from "./../src/User/user.schema.js";
+import Restaurant from "./../src/Restaurant/restaurant.schema.js";
+import {parentCommentSchema} from "./../src/Comment/comment.schema.js";
 const mongoose = require("mongoose");
 
 const chai = require("chai");
 const chaiHttp = require("chai-http");
-const assert = require("assert");
 
 chai.use(chaiHttp);
 const app = "http://localhost:3000";
@@ -15,47 +16,54 @@ const test_emails = [
     "🥝",
     "address2@someDomain.com",
 ];
-var auth_token;
+const test_place_ids = [
+    "🥝",
+    "ChIJ57Pc-peww4kRxsjS7GsqWfQ",
+    "ChIJ_UDANVHGw4kRyF7OUJ3Uxrw",
+]
+const test_place_names = [
+    "Vivi Bubble Tea/KBG",
+    "Wendy's",
+    "🥝",
+]
+const test_comment_posters = [
+    "userName0",
+    "🥝",
+]
+var login_data;
+var restaurant_data;
+var parent_comment_data;
 
-// Test the router
-describe("Router", function() {
-    describe("GET /", function() {
-        it("should error without auth", function(done) {
-            chai
-                .request(app)
-                .get("/")
-                .end(function(err, res) {
-                    chai.expect(res).to.have.status(401);
-                    done();
-                })
-        });
+// Removes the test database data
+function cleanup() {
+    // Connect to DB
+    mongoose.connect('mongodb://localhost:27017/Ask-Foodie-DB', {
+        useNewUrlParser: true,
+        useCreateIndex: true,
+        useUnifiedTopology: true
     });
-});
+
+    // Remove test data in database
+    Promise.all([
+        User.deleteMany({ email: {$in: test_emails} }),
+        Restaurant.deleteMany({ place_id: {$in: test_place_ids} }),
+        Restaurant.deleteMany({ name: {$in: test_place_names} }),
+        parentCommentSchema.deleteMany({ poster: {$in: test_comment_posters} }),
+        parentCommentSchema.deleteMany({ restaurant: test_place_names[0] }),
+    ])
+        .then(function(values) {
+            // Disconnect from DB
+            mongoose.disconnect();
+            return;
+        })
+        .catch(console.log);
+    return;
+};
+before(cleanup);
+after(cleanup);
 
 // Test the user controller
 describe("User Controller", function() {
-    function user_cleanup() {
-        // Connect to DB
-        mongoose.connect('mongodb://localhost:27017/Ask-Foodie-DB', {
-            useNewUrlParser: true,
-            useCreateIndex: true,
-            useUnifiedTopology: true
-        });
-    
-        // Remove test users
-        Promise.all([
-            User.deleteMany({ email: {$in: test_emails} }) // Removes all users with emails in test_emails
-        ])
-            .then(function(values) {
-                // Disconnect from DB
-                mongoose.disconnect();
-                return;
-            })
-            .catch(console.log);
-        return;
-    };
-    before(user_cleanup);
-
     // Test registerring
     describe("POST /api/register", function() {
         it("should register user normally", function(done) {
@@ -156,6 +164,29 @@ describe("User Controller", function() {
                     done();
                 });
         });
+
+        it("should register user normally 2", function(done) {
+            const params = {
+                email: test_emails[1],
+                firstName: "firstName1",
+                userName: "userName1",
+                birthdate: new Date(),
+                password: "password1",
+            };
+
+            // Register a user
+            chai
+                .request(app)
+                .post("/api/register")
+                .send(params)
+                .end(function(err, res) {
+                    chai.expect(res).status(200);
+                    chai.expect(res).ownProperty("body");
+                    chai.expect(res.body).ownProperty("error");
+                    chai.expect(res.body.error).equal(false);
+                    done();
+                });
+        });
     });
 
     // Test logging in
@@ -177,7 +208,7 @@ describe("User Controller", function() {
                     chai.expect(res.body.error).equal(false);
                     chai.expect(res.body).ownProperty("data");
                     chai.expect(res.body.data).ownProperty("token");
-                    auth_token = res.body.data.token;
+                    login_data = res.body.data;
                     done();
                 });
         });
@@ -238,8 +269,8 @@ describe("User Controller", function() {
             chai
                 .request(app)
                 .post("/api/addProfileInfo")
-                .set("email", test_emails[0])
-                .set("Authorization", `Bearer ${auth_token}`)
+                .set("email", login_data.email)
+                .set("Authorization", `Bearer ${login_data.token}`)
                 .send(params)
                 .end(function(err, res) {
                     chai.expect(res).status(200);
@@ -257,13 +288,50 @@ describe("User Controller", function() {
             chai
                 .request(app)
                 .post("/api/addProfileInfo")
-                .set("email", test_emails[0])
-                .set("Authorization", `Bearer ${auth_token}`)
+                .set("email", login_data.email)
+                .set("Authorization", `Bearer ${login_data.token}`)
                 .send(params)
                 .end(function(err, res) {
                     chai.expect(res).status(400);
                     done();
                 });
+        });
+    });
+});
+
+// Test the authentification
+describe("Auth", function() {
+    describe("GET /", function() {
+        it("should authenticate normally", function(done) {
+            chai
+                .request(app)
+                .get("/")
+                .set("Authorization", `Bearer ${login_data.token}`)
+                .end(function(err, res) {
+                    chai.expect(res).to.have.status(200);
+                    done();
+                })
+        });
+
+        it("should fail with no token", function(done) {
+            chai
+                .request(app)
+                .get("/")
+                .end(function(err, res) {
+                    chai.expect(res).to.have.status(401);
+                    done();
+                })
+        });
+        
+        it("should fail with fake token", function(done) {
+            chai
+                .request(app)
+                .get("/")
+                .set("Authorization", `Bearer kiwi`)
+                .end(function(err, res) {
+                    chai.expect(res).to.have.status(401);
+                    done();
+                })
         });
     });
 });
@@ -283,8 +351,8 @@ describe("Places Controller", function() {
             chai
                 .request(app)
                 .get("/api/places/find")
-                .set("email", test_emails[0])
-                .set("Authorization", `Bearer ${auth_token}`)
+                .set("email", login_data.email)
+                .set("Authorization", `Bearer ${login_data.token}`)
                 .query(params)
                 .end(function(err, res) {
                     chai.expect(res).status(200);
@@ -299,8 +367,10 @@ describe("Places Controller", function() {
 
                     chai.expect(places).not.empty;
                     for (var result_i = 0; result_i < places.length; result_i++) {
-                        chai.expect(places[result_i]).have.all.keys(["vicinity", "name", "place_id", "photos"]);
+                        chai.expect(places[result_i]).include.keys("vicinity", "name", "place_id", "photos");
                     }
+                    restaurant_data = places[0];
+
                     done();
                 });
         });
@@ -316,8 +386,8 @@ describe("Places Controller", function() {
             chai
                 .request(app)
                 .get("/api/places/find")
-                .set("email", test_emails[0])
-                .set("Authorization", `Bearer ${auth_token}`)
+                .set("email", login_data.email)
+                .set("Authorization", `Bearer ${login_data.token}`)
                 .query(params)
                 .end(function(err, res) {
                     chai.expect(res).status(400);
@@ -336,8 +406,8 @@ describe("Places Controller", function() {
             chai
                 .request(app)
                 .get("/api/places/find")
-                .set("email", test_emails[0])
-                .set("Authorization", `Bearer ${auth_token}`)
+                .set("email", login_data.email)
+                .set("Authorization", `Bearer ${login_data.token}`)
                 .query(params)
                 .end(function(err, res) {
                     chai.expect(res).status(400);
@@ -355,8 +425,8 @@ describe("Places Controller", function() {
             chai
                 .request(app)
                 .get("/api/places/find")
-                .set("email", test_emails[0])
-                .set("Authorization", `Bearer ${auth_token}`)
+                .set("email", login_data.email)
+                .set("Authorization", `Bearer ${login_data.token}`)
                 .query(params)
                 .end(function(err, res) {
                     chai.expect(res).status(200);
@@ -371,7 +441,7 @@ describe("Places Controller", function() {
 
                     chai.expect(places).not.empty;
                     for (var result_i = 0; result_i < places.length; result_i++) {
-                        chai.expect(places[result_i]).have.all.keys(["vicinity", "name", "place_id", "photos"]);
+                        chai.expect(places[result_i]).include.keys(["vicinity", "name", "place_id", "photos"]);
                     }
                     done();
                 });
@@ -390,8 +460,8 @@ describe("Places Controller", function() {
             chai
                 .request(app)
                 .get("/api/places/find")
-                .set("email", test_emails[0])
-                .set("Authorization", `Bearer ${auth_token}`)
+                .set("email", login_data.email)
+                .set("Authorization", `Bearer ${login_data.token}`)
                 .query(params)
                 .end(function(err, res) {
                     chai.expect(res).status(503);
@@ -411,8 +481,8 @@ describe("Places Controller", function() {
             chai
                 .request(app)
                 .get("/api/places/find")
-                .set("email", test_emails[0])
-                .set("Authorization", `Bearer ${auth_token}`)
+                .set("email", login_data.email)
+                .set("Authorization", `Bearer ${login_data.token}`)
                 .query(params)
                 .end(function(err, res) {
                     chai.expect(res).status(503);
@@ -434,8 +504,8 @@ describe("Places Controller", function() {
             chai
                 .request(app)
                 .get("/api/places/photos")
-                .set("email", test_emails[0])
-                .set("Authorization", `Bearer ${auth_token}`)
+                .set("email", login_data.email)
+                .set("Authorization", `Bearer ${login_data.token}`)
                 .query(params)
                 .end(function(err, res) {
                     chai.expect(res).status(200);
@@ -453,8 +523,8 @@ describe("Places Controller", function() {
             chai
                 .request(app)
                 .get("/api/places/photos")
-                .set("email", test_emails[0])
-                .set("Authorization", `Bearer ${auth_token}`)
+                .set("email", login_data.email)
+                .set("Authorization", `Bearer ${login_data.token}`)
                 .query(params)
                 .end(function(err, res) {
                     chai.expect(res).status(400);
@@ -471,8 +541,8 @@ describe("Places Controller", function() {
             chai
                 .request(app)
                 .get("/api/places/photos")
-                .set("email", test_emails[0])
-                .set("Authorization", `Bearer ${auth_token}`)
+                .set("email", login_data.email)
+                .set("Authorization", `Bearer ${login_data.token}`)
                 .query(params)
                 .end(function(err, res) {
                     chai.expect(res).status(503);
@@ -490,8 +560,8 @@ describe("Places Controller", function() {
             chai
                 .request(app)
                 .get("/api/places/photos")
-                .set("email", test_emails[0])
-                .set("Authorization", `Bearer ${auth_token}`)
+                .set("email", login_data.email)
+                .set("Authorization", `Bearer ${login_data.token}`)
                 .query(params)
                 .end(function(err, res) {
                     chai.expect(res).status(503);
@@ -509,8 +579,8 @@ describe("Places Controller", function() {
             chai
                 .request(app)
                 .get("/api/places/photos")
-                .set("email", test_emails[0])
-                .set("Authorization", `Bearer ${auth_token}`)
+                .set("email", login_data.email)
+                .set("Authorization", `Bearer ${login_data.token}`)
                 .query(params)
                 .end(function(err, res) {
                     chai.expect(res).status(503);
@@ -518,5 +588,335 @@ describe("Places Controller", function() {
                 });
         });
         */
+    });
+});
+
+// Test the restaurant controller
+describe("Restaurant Controller", function() {
+    describe("POST /api/addRestaurant", function() {
+        it("should add a restaurant normally", function(done) {
+            const params = {
+                place_id: restaurant_data.place_id,
+                name: restaurant_data.name,
+                address: restaurant_data.vicinity,
+                phonenumber: "+1 908-8675-309",
+                price: "$",
+                cuisine: "italian",
+                rating: "5",
+                comments: [],
+            };
+
+            chai
+                .request(app)
+                .post("/api/addRestaurant")
+                .set("email", login_data.email)
+                .set("Authorization", `Bearer ${login_data.token}`)
+                .send(params)
+                .end(function(err, res) {
+                    chai.expect(res).status(200);
+                    chai.expect(res).ownProperty("body");
+                    chai.expect(res.body).ownProperty("error");
+                    chai.expect(res.body.error).equal(false);
+                    done();
+                });
+        });
+        
+        it("should fail to add a duplicate", function(done) {
+            const params = {
+                place_id: restaurant_data.place_id,
+                name: restaurant_data.name,
+                address: restaurant_data.vicinity,
+                phonenumber: "+1 908-8675-309",
+                price: "$",
+                cuisine: "italian",
+                rating: "5",
+                comments: [],
+            };
+
+            chai
+                .request(app)
+                .post("/api/addRestaurant")
+                .set("email", login_data.email)
+                .set("Authorization", `Bearer ${login_data.token}`)
+                .send(params)
+                .end(function(err, res) {
+                    chai.expect(res).status(200);
+                    chai.expect(res).ownProperty("body");
+                    chai.expect(res.body).ownProperty("error");
+                    chai.expect(res.body.error).equal(true);
+                    done();
+                });
+        });
+        
+        it("should fail to add without place_id", function(done) {
+            const params = {
+                name: restaurant_data.name,
+                address: restaurant_data.vicinity,
+                phonenumber: "+1 908-8675-309",
+                price: "$",
+                cuisine: "italian",
+                rating: "5",
+                comments: [],
+            };
+
+            chai
+                .request(app)
+                .post("/api/addRestaurant")
+                .set("email", login_data.email)
+                .set("Authorization", `Bearer ${login_data.token}`)
+                .send(params)
+                .end(function(err, res) {
+                    chai.expect(res).status(200);
+                    chai.expect(res).ownProperty("body");
+                    chai.expect(res.body).ownProperty("error");
+                    chai.expect(res.body.error).equal(true);
+                    done();
+                });
+        });
+        
+        it("should fail with invalid place_id", function(done) {
+            const params = {
+                place_id: test_place_ids[0],
+                name: restaurant_data.name,
+                address: restaurant_data.vicinity,
+                phonenumber: "+1 908-8675-309",
+                price: "$",
+                cuisine: "italian",
+                rating: "5",
+                comments: [],
+            };
+
+            chai
+                .request(app)
+                .post("/api/addRestaurant")
+                .set("email", login_data.email)
+                .set("Authorization", `Bearer ${login_data.token}`)
+                .send(params)
+                .end(function(err, res) {
+                    chai.expect(res).status(200);
+                    chai.expect(res).ownProperty("body");
+                    chai.expect(res.body).ownProperty("error");
+                    chai.expect(res.body.error).equal(true);
+                    done();
+                });
+        });
+    });
+});
+
+// Test the comments controller
+describe("Comment Controller", function() {
+    describe("POST /api/addParentComment", function() {
+        it("should post a parent comment", function(done) {
+            const params = {
+                poster: login_data.userName,
+                restaurant: restaurant_data.name,
+                content: "Comment 0"
+            };
+
+            chai
+                .request(app)
+                .post("/api/addParentComment")
+                .set("email", login_data.email)
+                .set("Authorization", `Bearer ${login_data.token}`)
+                .send(params)
+                .end(function(err, res) {
+                    chai.expect(res).status(200);
+                    chai.expect(res).ownProperty("body");
+                    chai.expect(res.body).ownProperty("error");
+                    chai.expect(res.body.error).equal(false);
+                    parent_comment_data = res.body;
+                    done();
+                });
+        });
+        
+        it("should post a duplicate", function(done) {
+            const params = {
+                poster: login_data.userName,
+                restaurant: restaurant_data.name,
+                content: "Comment 0"
+            };
+
+            chai
+                .request(app)
+                .post("/api/addParentComment")
+                .set("email", login_data.email)
+                .set("Authorization", `Bearer ${login_data.token}`)
+                .send(params)
+                .end(function(err, res) {
+                    chai.expect(res).status(200);
+                    chai.expect(res).ownProperty("body");
+                    chai.expect(res.body).ownProperty("error");
+                    chai.expect(res.body.error).equal(false);
+                    done();
+                });
+        });
+        
+        it("should fail without poster", function(done) {
+            const params = {
+                restaurant: restaurant_data.name,
+                content: "Comment 0"
+            };
+
+            chai
+                .request(app)
+                .post("/api/addParentComment")
+                .set("email", login_data.email)
+                .set("Authorization", `Bearer ${login_data.token}`)
+                .send(params)
+                .end(function(err, res) {
+                    chai.expect(res).status(200);
+                    chai.expect(res).ownProperty("body");
+                    chai.expect(res.body).ownProperty("error");
+                    chai.expect(res.body.error).equal(true);
+                    done();
+                });
+        });
+        
+        it("should fail without comment", function(done) {
+            const params = {
+                poster: login_data.userName,
+                restaurant: restaurant_data.name,
+                content: "Comment 0"
+            };
+
+            chai
+                .request(app)
+                .post("/api/addParentComment")
+                .set("email", login_data.email)
+                .set("Authorization", `Bearer ${login_data.token}`)
+                .send(params)
+                .end(function(err, res) {
+                    chai.expect(res).status(200);
+                    chai.expect(res).ownProperty("body");
+                    chai.expect(res.body).ownProperty("error");
+                    chai.expect(res.body.error).equal(true);
+                    done();
+                });
+        });
+        
+        it("should fail with invalid poster", function(done) {
+            const params = {
+                poster: test_comment_posters[1],
+                restaurant: restaurant_data.name,
+                content: "Comment 0"
+            };
+
+            chai
+                .request(app)
+                .post("/api/addParentComment")
+                .set("email", login_data.email)
+                .set("Authorization", `Bearer ${login_data.token}`)
+                .send(params)
+                .end(function(err, res) {
+                    chai.expect(res).status(200);
+                    chai.expect(res).ownProperty("body");
+                    chai.expect(res.body).ownProperty("error");
+                    chai.expect(res.body.error).equal(true);
+                    parent_comment_data = res.body;
+                    done();
+                });
+        });
+
+        it("should fail with an invalid restaurant", function(done) {
+            const params = {
+                poster: login_data.userName,
+                restaurant: "🥝",
+                content: "Comment 0"
+            };
+
+            chai
+                .request(app)
+                .post("/api/addParentComment")
+                .set("email", login_data.email)
+                .set("Authorization", `Bearer ${login_data.token}`)
+                .send(params)
+                .end(function(err, res) {
+                    chai.expect(res).status(200);
+                    chai.expect(res).ownProperty("body");
+                    chai.expect(res.body).ownProperty("error");
+                    chai.expect(res.body.error).equal(true);
+                    done();
+                });
+        });
+    });
+    
+    describe("GET /api/findComments", function() {
+        it("should get comments normally", function(done) {
+            const params = {
+                poster: login_data.userName,
+            };
+
+            chai
+                .request(app)
+                .get("/api/findComments")
+                .set("email", login_data.email)
+                .set("Authorization", `Bearer ${login_data.token}`)
+                .query(params)
+                .end(function(err, res) {
+                    chai.expect(res).status(200);
+                    chai.expect(res).ownProperty("body");
+                    chai.expect(res.body).not.ownProperty("error");
+                    chai.expect(res.body).ownProperty("data");
+                    chai.expect(res.body.data).an("array");
+                    chai.expect(res.body.data).not.empty;
+                    done();
+                });
+        });
+        
+        it("should get fail without poster", function(done) {
+            const params = {};
+
+            chai
+                .request(app)
+                .get("/api/findComments")
+                .set("email", login_data.email)
+                .set("Authorization", `Bearer ${login_data.token}`)
+                .query(params)
+                .end(function(err, res) {
+                    chai.expect(res).status(200);
+                    chai.expect(res).ownProperty("body");
+                    chai.expect(res.body).ownProperty("error");
+                    chai.expect(res.body.error).equal(true);
+                    done();
+                });
+        });
+        
+        it("should get no comments with poster that has no comments", function(done) {
+            const params = {
+                poster: test_comment_posters[1],
+            };
+
+            chai
+                .request(app)
+                .get("/api/findComments")
+                .set("email", login_data.email)
+                .set("Authorization", `Bearer ${login_data.token}`)
+                .query(params)
+                .end(function(err, res) {
+                    chai.expect(res).status(200);
+                    chai.expect(res).ownProperty("body");
+                    chai.expect(res.body).not.ownProperty("error");
+                    done();
+                });
+        });
+        
+        it("should get no comments with invalid poster", function(done) {
+            const params = {
+                poster: test_comment_posters[1],
+            };
+
+            chai
+                .request(app)
+                .get("/api/findComments")
+                .set("email", login_data.email)
+                .set("Authorization", `Bearer ${login_data.token}`)
+                .query(params)
+                .end(function(err, res) {
+                    chai.expect(res).status(200);
+                    chai.expect(res).ownProperty("body");
+                    chai.expect(res.body).not.ownProperty("error");
+                    done();
+                });
+        });
     });
 });
