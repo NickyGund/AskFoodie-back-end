@@ -289,16 +289,13 @@ describe("Places Controller", function() {
                 .end(function(err, res) {
                     chai.expect(res).status(200);
                     chai.expect(res).ownProperty("text");
-                    chai.expect(res.text).a("string");
                     
                     var places;
                     try {
-                        places = JSON.stringify(res.text);
+                        places = JSON.parse(res.text);
                     } catch(err) {
-                        assert.fail(`Could not stringify result body: ${res.text}`);
+                        fail(err.message);
                     }
-
-                    console.log(places)
 
                     chai.expect(places).not.empty;
                     for (var result_i = 0; result_i < places.length; result_i++) {
@@ -307,5 +304,219 @@ describe("Places Controller", function() {
                     done();
                 });
         });
+        
+        it("should error without latitude", function(done) {
+            const params = {
+                longitude: '-74.416',
+                filters: JSON.stringify(["$$$"]),
+                foodFilters: JSON.stringify(["Fast Food"]),
+            };
+
+            // Register a user
+            chai
+                .request(app)
+                .get("/api/places/find")
+                .set("email", test_emails[0])
+                .set("Authorization", `Bearer ${auth_token}`)
+                .query(params)
+                .end(function(err, res) {
+                    chai.expect(res).status(400);
+                    done();
+                });
+        });
+
+        it("should error without longitude", function(done) {
+            const params = {
+                latitude: '40.6129',
+                filters: JSON.stringify(["$$$"]),
+                foodFilters: JSON.stringify(["Fast Food"]),
+            };
+
+            // Register a user
+            chai
+                .request(app)
+                .get("/api/places/find")
+                .set("email", test_emails[0])
+                .set("Authorization", `Bearer ${auth_token}`)
+                .query(params)
+                .end(function(err, res) {
+                    chai.expect(res).status(400);
+                    done();
+                });
+        });
+        
+        it("should find a place with filters missing", function(done) {
+            const params = {
+                latitude: '40.6129',
+                longitude: '-74.416'
+            };
+
+            // Register a user
+            chai
+                .request(app)
+                .get("/api/places/find")
+                .set("email", test_emails[0])
+                .set("Authorization", `Bearer ${auth_token}`)
+                .query(params)
+                .end(function(err, res) {
+                    chai.expect(res).status(200);
+                    chai.expect(res).ownProperty("text");
+                    
+                    var places;
+                    try {
+                        places = JSON.parse(res.text);
+                    } catch(err) {
+                        fail(err.message);
+                    }
+
+                    chai.expect(places).not.empty;
+                    for (var result_i = 0; result_i < places.length; result_i++) {
+                        chai.expect(places[result_i]).have.all.keys(["vicinity", "name", "place_id", "photos"]);
+                    }
+                    done();
+                });
+        });
+
+        /* 
+        it("should error with too low longitude and too low latitude", function(done) {
+            const params = {
+                latitude: '-1',
+                longitude: '-181',
+                filters: JSON.stringify(["$$$"]),
+                foodFilters: JSON.stringify(["Fast Food"]),
+            };
+
+            // Register a user
+            chai
+                .request(app)
+                .get("/api/places/find")
+                .set("email", test_emails[0])
+                .set("Authorization", `Bearer ${auth_token}`)
+                .query(params)
+                .end(function(err, res) {
+                    chai.expect(res).status(503);
+                    done();
+                });
+        });
+        
+        it("should error with too high longitude and too high latitude", function(done) {
+            const params = {
+                latitude: '-1',
+                longitude: '-181',
+                filters: JSON.stringify(["$$$"]),
+                foodFilters: JSON.stringify(["Fast Food"]),
+            };
+
+            // Register a user
+            chai
+                .request(app)
+                .get("/api/places/find")
+                .set("email", test_emails[0])
+                .set("Authorization", `Bearer ${auth_token}`)
+                .query(params)
+                .end(function(err, res) {
+                    chai.expect(res).status(503);
+                    done();
+                });
+        });
+        */
+    });
+
+    describe("GET /api/places/photos", function() {
+        /*
+        it("should get an image normally", function(done) {
+            const params = {
+                photo_reference: "CnRtAAAATLZNl354RwP_9UKbQ_5Psy40texXePv4oAlgP4qNEkdIrkyse7rPXYGd9D_Uj1rVsQdWT4oRz4QrYAJNpFX7rzqqMlZw2h2E2y5IKMUZ7ouD_SlcHxYq1yL4KbKUv3qtWgTK0A6QbGh87GB3sscrHRIQiG2RrmU_jF4tENr9wGS_YxoUSSDrYjWmrNfeEHSGSc3FyhNLlBU",
+                maxwidth: 400,
+            };
+
+            // Register a user
+            chai
+                .request(app)
+                .get("/api/places/photos")
+                .set("email", test_emails[0])
+                .set("Authorization", `Bearer ${auth_token}`)
+                .query(params)
+                .end(function(err, res) {
+                    chai.expect(res).status(200);
+                    chai.expect(res.headers["content-type"]).equals("image/jpeg");
+                    done();
+                });
+        });
+
+        it("should fail without photo_reference", function(done) {
+            const params = {
+                maxwidth: 400,
+            };
+
+            // Register a user
+            chai
+                .request(app)
+                .get("/api/places/photos")
+                .set("email", test_emails[0])
+                .set("Authorization", `Bearer ${auth_token}`)
+                .query(params)
+                .end(function(err, res) {
+                    chai.expect(res).status(400);
+                    done();
+                });
+        });
+
+        it("should fail without maxwidth", function(done) {
+            const params = {
+                photo_reference: "CnRtAAAATLZNl354RwP_9UKbQ_5Psy40texXePv4oAlgP4qNEkdIrkyse7rPXYGd9D_Uj1rVsQdWT4oRz4QrYAJNpFX7rzqqMlZw2h2E2y5IKMUZ7ouD_SlcHxYq1yL4KbKUv3qtWgTK0A6QbGh87GB3sscrHRIQiG2RrmU_jF4tENr9wGS_YxoUSSDrYjWmrNfeEHSGSc3FyhNLlBU",
+            };
+
+            // Register a user
+            chai
+                .request(app)
+                .get("/api/places/photos")
+                .set("email", test_emails[0])
+                .set("Authorization", `Bearer ${auth_token}`)
+                .query(params)
+                .end(function(err, res) {
+                    chai.expect(res).status(503);
+                    done();
+                });
+        });
+        
+        it("should fail with invalid photo_reference", function(done) {
+            const params = {
+                photo_reference: "🥝",
+                maxwidth: 400,
+            };
+
+            // Register a user
+            chai
+                .request(app)
+                .get("/api/places/photos")
+                .set("email", test_emails[0])
+                .set("Authorization", `Bearer ${auth_token}`)
+                .query(params)
+                .end(function(err, res) {
+                    chai.expect(res).status(503);
+                    done();
+                });
+        });
+        
+        it("should fail with invalid maxwidth", function(done) {
+            const params = {
+                photo_reference: "CnRtAAAATLZNl354RwP_9UKbQ_5Psy40texXePv4oAlgP4qNEkdIrkyse7rPXYGd9D_Uj1rVsQdWT4oRz4QrYAJNpFX7rzqqMlZw2h2E2y5IKMUZ7ouD_SlcHxYq1yL4KbKUv3qtWgTK0A6QbGh87GB3sscrHRIQiG2RrmU_jF4tENr9wGS_YxoUSSDrYjWmrNfeEHSGSc3FyhNLlBU",
+                maxwidth: "🥝",
+            };
+
+            // Register a user
+            chai
+                .request(app)
+                .get("/api/places/photos")
+                .set("email", test_emails[0])
+                .set("Authorization", `Bearer ${auth_token}`)
+                .query(params)
+                .end(function(err, res) {
+                    chai.expect(res).status(503);
+                    done();
+                });
+        });
+        */
     });
 });
