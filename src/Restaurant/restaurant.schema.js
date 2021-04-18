@@ -5,6 +5,7 @@ const {Schema} = mongoose
 const restaurantSchema = new Schema({
     place_id:{
         type: String,
+        require: [true, 'google place id is required'],
         unique: true,
         trim: true,
         dropDups: true,

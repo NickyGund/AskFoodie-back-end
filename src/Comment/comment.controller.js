@@ -1,10 +1,16 @@
 import { Mongoose } from "mongoose";
-import restaurantSchema from "../Restaurant/restaurant.schema.js";
 import {Base, parentCommentSchema, childCommentSchema} from "./comment.schema.js";
+import { addParentCommentValidation } from "./comment.validation.js";
 
 //create parent comment
 
 export const addParentComment = async (req, res) => {
+    const {error} = addParentCommentValidation(req.body)
+
+    if(error) {
+        return res.json({error: true, data: error.details[0].message})
+    }
+
     console.log(req.body)
     try{
         const parentComment = await parentCommentSchema.create(req.body)
