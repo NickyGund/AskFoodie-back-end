@@ -1,5 +1,5 @@
 import User from "./user.schema.js";
-import {registerValidation, loginValidation, emailValidation, passwordValidation} from "./validation.js"
+import {registerValidation, loginValidation} from "./validation.js"
 
 
 
@@ -73,38 +73,3 @@ export const addProfileInfo = async (req, res) => {
     return res.json({data:user})
     
 }
-
-export const checkUserName = async (req, res) => {
-    try {
-      const existingUserName = await User.findOne(
-        {userName: req.params.userName})
-  
-        if(existingUserName){
-          return res.json({error: false, exists: true})
-        } else{
-          return res.json({error: false, exists:false})
-        }
-      
-    } catch (e) {
-      return res.json({ error: true, data: e.message })
-    }
-  }
-  
-export const checkEmail = async (req, res) => {
-    try {
-      const { error } = emailValidation(req.params)
-      if (error) {
-        return res.json({ error: true, data: error.details[0].message });
-      }
-      const existingEmail = await User.findOne({email: req.params.email})
-  
-        if(existingEmail){
-          return res.json({error: false, exists: true})
-        } else{
-          return res.json({error: false, exists: false})
-        }
-      
-    } catch (e) {
-      return res.json({ error: true, data: e.message })
-    }
-  }
