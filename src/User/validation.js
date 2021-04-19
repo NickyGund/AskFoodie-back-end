@@ -34,7 +34,7 @@ export const emailValidation = data => {
     })
   
     return schema.validate(data)
-  }
+}
   
   
 export const passwordValidation = data => {

@@ -11,4 +11,5 @@ routes.get('/auth', expressJwt({ secret }), checkAuth);
 routes.post('/addProfileInfo', addProfileInfo);
 routes.get("/check_username/:userName",checkUserName)
 routes.get("/check_email/:email", checkEmail)
+
 export default routes;
