@@ -7,4 +7,4 @@ var router = require('express').Router();
 router.get("/find", find)
 router.get("/photos", getPhoto)
 
-module.exports = router;
+export default router;

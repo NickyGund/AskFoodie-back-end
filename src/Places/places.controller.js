@@ -6,6 +6,7 @@ import nodemon from "nodemon";
 const outputType = "json";
 
 const nearbysearchURL = "https://maps.googleapis.com/maps/api/place/nearbysearch";
+const getPhotoURL = "https://maps.googleapis.com/maps/api/place/photo";
 
 function getKeyword(foodFilters, profileInfo) {
     if (foodFilters.length > 1) {
@@ -126,6 +127,8 @@ export async function find(req, res) {
         return res.status(400).send(`Failed to get email from headers`);
     }
 
+    console.log(req.query);
+
     // Get user from email
     var user = await User.findOne({ email: req.headers.email })
 
@@ -142,14 +145,15 @@ export async function find(req, res) {
         return res.status(400).send(`Failed to get location from request`);
     }
 
-    if (!( ("filters" in req.query) || ("foodFilters" in req.query) )) {
-        console.log(`Failed to get a location from Client IP: ${error}`);
-        return res.status(503).send(`Server failed to get a location from Client IP: ${error}`);
+    var filters = [];
+    if ("filters" in req.query) {
+        req.query.filters = JSON.parse(req.query.filters);
     }
-    
-    // Get filters and foodFilters from query
-    var filters = JSON.parse(req.query.filters);
-    var foodFilters = JSON.parse(req.query.foodFilters);
+
+    var foodFilters = [];
+    if ("foodFilters" in req.query) {
+        foodFilters = JSON.parse(req.query.foodFilters);
+    }
 
     var location = `${latitude}, ${longitude}`;
     var radius = getRadius(filters, user.profileInfo);
@@ -184,11 +188,13 @@ export async function find(req, res) {
         };
 
         // requests a place with the text query from google maps
+        /*
         placeDataRequest = await axios({
             method: "get",
             url: `${nearbysearchURL}/${outputType}`,
             params: params
         });
+        */
     } catch(error) {
         console.log(`Failed to get a place from Google API: ${error}`);
         return res.status(503).send(`Server failed to get a place from Google API: ${error}`);
@@ -234,7 +240,7 @@ export async function getPhoto(req, res) {
             params: params
         });
     } catch(error) {
-        console.log(`Status: ${image_request.status}\nFailed to get a photo from Google API: ${error}`);
+        console.log(`Failed to get a photo from Google API: ${error}`);
         return res.status(503).send(`Server failed to get a photo from Google API: ${error}`);
     }
 

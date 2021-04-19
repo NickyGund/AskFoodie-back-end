@@ -1,4 +1,4 @@
-import mongoose, { mongo, Mongoose, SchemaTypes } from 'mongoose';
+import mongoose from 'mongoose';
 
 const {Schema} = mongoose
 
@@ -7,9 +7,9 @@ const baseOptions = {
     collection: 'Comments',
     timestamps: true
 }
-const Base = mongoose.model('Base', new Schema({}, baseOptions));
+export const Base = mongoose.model('Base', new Schema({}, baseOptions));
 
-const parentCommentSchema = Base.discriminator('parentComment', new mongoose.Schema({
+export const parentCommentSchema = Base.discriminator('parentComment', new mongoose.Schema({
     poster: {
         //User ObjectID
         type: String,
@@ -37,7 +37,7 @@ parentCommentSchema.methods = {
     }
 }
 
-const childCommentSchema = Base.discriminator('childComment', new mongoose.Schema({
+export const childCommentSchema = Base.discriminator('childComment', new mongoose.Schema({
     poster: {
         //User ObjectID
         type: String,
@@ -66,12 +66,4 @@ childCommentSchema.methods = {
             parent: this.parent,
         }
     },
-}
-
-
-module.exports = {
-    Base: Base,
-    parentCommentSchema: parentCommentSchema,
-    childCommentSchema, childCommentSchema
-    
 }

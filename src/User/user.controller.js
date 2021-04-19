@@ -37,7 +37,7 @@ export const register = async (req, res) => {
     const emailExist = await User.findOne({email: req.body.email})
 
     if(emailExist){
-        res.json({error: true, data: "email already exists."})
+        return res.json({error: true, data: "email already exists."})
     }
 
 
@@ -64,13 +64,23 @@ export const checkAuth = async (req, res) => {
 }
 
 export const addProfileInfo = async (req, res) => {
-    console.log(req.body)
     const update = req.body
-    console.log(req.headers.email + 'EMAIL')
-    const email = req.headers.email
-    const user = await User.findOneAndUpdate({email}, {profileInfo : update});
-    return res.json({data:user})
-    
+
+    const keys = Object.keys(update);
+    keys.sort();
+    if (JSON.stringify(keys) != JSON.stringify(["dining", "distance", "foodTypes", "price"])) {
+        return res.status(400).send({data: "invalid params"});
+    }
+
+    const email = req.headers.email;
+    var user;
+    try {
+        user = await User.findOneAndUpdate({email}, {profileInfo : update});
+    } catch(err) {
+        console.log(err);
+        return res.status(503).end();
+    }
+    return res.send({error: false, data: user});
 }
 
 export const checkUserName = async (req, res) => {
