@@ -1,7 +1,6 @@
 import axios from "axios";
 import User from "./../User/user.schema.js";
-import { addRestaurant } from "./../Restaurant/restaurant.controller.js";
-import nodemon from "nodemon";
+import { addRestaurant } from "./../Restaurant/restaurant.controller.js"
 
 const outputType = "json";
 
@@ -188,13 +187,11 @@ export async function find(req, res) {
         };
 
         // requests a place with the text query from google maps
-        /*
         placeDataRequest = await axios({
             method: "get",
             url: `${nearbysearchURL}/${outputType}`,
             params: params
         });
-        */
     } catch(error) {
         console.log(`Failed to get a place from Google API: ${error}`);
         return res.status(503).send(`Server failed to get a place from Google API: ${error}`);
@@ -205,8 +202,18 @@ export async function find(req, res) {
         return res.status(503).send(`Server failed to get a place from Google API: ${placeDataRequest.data.status}`);
     }
 
-    addToDB(placeDataRequest.data.results);
-    return res.send(JSON.stringify(placeDataRequest.data.results));
+    // Gets a random place from the list
+    var length = placeDataRequest.data.results.length;
+    if (length == 0) {
+        console.log("No places found");
+        return res.status(503).send("No places found");
+    }
+
+    var N = Math.floor(Math.random() * length);
+    var place = [placeDataRequest.data.results[N]];
+
+    addToDB(place);
+    return res.send(JSON.stringify(place));
 }
 
 // Gets photos given the photo_reference, and maxheight or maxwidth
