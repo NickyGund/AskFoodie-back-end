@@ -3,23 +3,20 @@ import {addRestaurantValidation} from "./restaurant.validation.js"
 
 
 // create new restaurant 
-
-export const addRestaurant = async (req, res) => {
-    const {error} = addRestaurantValidation(req.body)
-
-    if(error) {
-        return res.json({error: true, data: error.details[0].message})
-    }
-
-    console.log(req.body)  
+export const addRestaurant = async (restaurant_data) => {
     try{
-
-    const restaurant = await Restaurant.create(req.body)
-    res.json({error: false, data: restaurant.toJSON()})
-}
-catch(e){
-    res.json({error: true, data: e})
-}
+        await Restaurant.updateOne(
+            {
+                "place_id": restaurant_data.place_id
+            },
+            restaurant_data,
+            {
+                upsert: true
+            }
+        );
+    } catch(e) {
+        throw(e)
+    }
 }
 
 export const findRestaurant = async (req, res) => {

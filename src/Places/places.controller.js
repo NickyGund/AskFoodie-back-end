@@ -1,11 +1,11 @@
 import axios from "axios";
 import User from "./../User/user.schema.js";
+import { addRestaurant } from "./../Restaurant/restaurant.controller.js";
+import nodemon from "nodemon";
 
 const outputType = "json";
 
 const nearbysearchURL = "https://maps.googleapis.com/maps/api/place/nearbysearch";
-
-const infoFields = "name,icon,formatted_address,url,formatted_phone_number,website";
 
 function getKeyword(foodFilters, profileInfo) {
     if (foodFilters.length > 1) {
@@ -95,6 +95,29 @@ function getParams(location, radius, keyword, price) {
     return params;
 }
 
+// Adds all places sent to client to the database of restaurants
+function addToDB(places) {
+    for (var index=0; index < places.length; index++) {
+        var place = places[index];
+        var entry = {
+            "place_id": place.place_id,
+            "name": place.name,
+            "address": place.vicinity,
+            "phonenumber": undefined,
+            "rating": undefined,
+            "price": undefined,
+            "cuisine": undefined,
+            "rating": undefined,
+            "comments": [],
+        };
+        addRestaurant(entry).catch(function(e) {
+            console.log(`Failed to add restaurant to DB: ${e}`);
+            return
+        })
+    }
+    return
+}
+
 // Finds a nearby place given a query
 export async function find(req, res) {
     // Get email from query
@@ -171,13 +194,12 @@ export async function find(req, res) {
         return res.status(503).send(`Server failed to get a place from Google API: ${error}`);
     }
 
-    console.log(placeDataRequest.data);
-
     if (placeDataRequest.data.status != "OK") {
         console.log(`Failed to get a place from Google API: ${placeDataRequest.data.status}`);
         return res.status(503).send(`Server failed to get a place from Google API: ${placeDataRequest.data.status}`);
     }
 
+    addToDB(placeDataRequest.data.results);
     return res.send(JSON.stringify(placeDataRequest.data.results));
 }
 
