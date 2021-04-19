@@ -5,6 +5,11 @@ import {addRestaurantValidation} from "./restaurant.validation.js"
 // create new restaurant 
 export const addRestaurant = async (restaurant_data) => {
     try{
+        const {error} = addRestaurantValidation(restaurant_data)
+        if(error) {
+            throw(error)
+        }
+
         await Restaurant.updateOne(
             {
                 "place_id": restaurant_data.place_id

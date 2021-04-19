@@ -367,7 +367,7 @@ describe("Places Controller", function() {
 
                     chai.expect(places).not.empty;
                     for (var result_i = 0; result_i < places.length; result_i++) {
-                        chai.expect(places[result_i]).include.keys("vicinity", "name", "place_id", "photos");
+                        chai.expect(places[result_i]).include.keys("vicinity", "name", "place_id");
                     }
                     restaurant_data = places[0];
 
@@ -441,13 +441,12 @@ describe("Places Controller", function() {
 
                     chai.expect(places).not.empty;
                     for (var result_i = 0; result_i < places.length; result_i++) {
-                        chai.expect(places[result_i]).include.keys(["vicinity", "name", "place_id", "photos"]);
+                        chai.expect(places[result_i]).include.keys(["vicinity", "name", "place_id"]);
                     }
                     done();
                 });
         });
 
-        /* 
         it("should error with too low longitude and too low latitude", function(done) {
             const params = {
                 latitude: '-1',
@@ -489,7 +488,6 @@ describe("Places Controller", function() {
                     done();
                 });
         });
-        */
     });
 
     describe("GET /api/places/photos", function() {
@@ -593,6 +591,7 @@ describe("Places Controller", function() {
 
 // Test the restaurant controller
 describe("Restaurant Controller", function() {
+    /*
     describe("POST /api/addRestaurant", function() {
         it("should add a restaurant normally", function(done) {
             const params = {
@@ -602,8 +601,6 @@ describe("Restaurant Controller", function() {
                 phonenumber: "+1 908-8675-309",
                 price: "$",
                 cuisine: "italian",
-                rating: "5",
-                comments: [],
             };
 
             chai
@@ -629,8 +626,6 @@ describe("Restaurant Controller", function() {
                 phonenumber: "+1 908-8675-309",
                 price: "$",
                 cuisine: "italian",
-                rating: "5",
-                comments: [],
             };
 
             chai
@@ -655,8 +650,6 @@ describe("Restaurant Controller", function() {
                 phonenumber: "+1 908-8675-309",
                 price: "$",
                 cuisine: "italian",
-                rating: "5",
-                comments: [],
             };
 
             chai
@@ -682,8 +675,6 @@ describe("Restaurant Controller", function() {
                 phonenumber: "+1 908-8675-309",
                 price: "$",
                 cuisine: "italian",
-                rating: "5",
-                comments: [],
             };
 
             chai
@@ -701,6 +692,7 @@ describe("Restaurant Controller", function() {
                 });
         });
     });
+    */
 });
 
 // Test the comments controller
