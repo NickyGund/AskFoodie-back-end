@@ -9,13 +9,15 @@ import RestaurantRoute from "./Restaurant/restaurant.routes.js"
 import CommentRoute from "./Comment/comment.routes.js"
 import requireAuth from "./middleware/requireAuth.js"
 
-const secret = 'This is my secret';
+// Secret for encoding token
+const secret = process.env.MY_SECRET;
 
 const app = express();
 db();
 
 app.set('trust proxy', true)
 
+// Setup routes
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false,}));
 app.use("/api", UserRoute );
@@ -27,6 +29,7 @@ app.get('/', requireAuth, (req, res) => {
   res.send(`Your id: ${req.user._id}`);
 });
 
+// Initialize the app to run on the process's port or on port 3000
 let port = process.env.PORT || 3000;
 const server = app.listen(port, function () {
   console.log(`We're listening on port ${port}.`)

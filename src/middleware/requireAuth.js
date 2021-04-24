@@ -2,7 +2,7 @@ import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
 import User from "../User/user.schema.js";
 
-const SECRET = 'This is my secret'
+const SECRET = process.env.MY_SECRET;
 
 export default (req, res, next) => {
   const { authorization } = req.headers;
