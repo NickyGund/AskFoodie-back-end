@@ -1,6 +1,6 @@
 import  Joi from '@hapi/joi'
 
-// Check datatypes of a registration request's body
+// Ensure that data is valid for a user registration
 export const registerValidation = (data) => {
     const schema = Joi.object({
         email: Joi.string().required().email(),
@@ -15,7 +15,7 @@ export const registerValidation = (data) => {
     return schema.validate(data)
 }
 
-// Check datatypes of a login request's body
+// Ensure that data is valid for a user login
 export const loginValidation = (data) => {
     const schema = Joi.object({
         email: Joi.string().required().email(),
