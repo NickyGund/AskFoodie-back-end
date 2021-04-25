@@ -1,11 +1,11 @@
 import axios from "axios";
 import User from "./../User/user.schema.js";
+import { addRestaurant } from "./../Restaurant/restaurant.controller.js"
 
 const outputType = "json";
 
 const nearbysearchURL = "https://maps.googleapis.com/maps/api/place/nearbysearch";
-
-const infoFields = "name,icon,formatted_address,url,formatted_phone_number,website";
+const getPhotoURL = "https://maps.googleapis.com/maps/api/place/photo";
 
 function getKeyword(foodFilters, profileInfo) {
     if (foodFilters.length > 1) {
@@ -95,6 +95,29 @@ function getParams(location, radius, keyword, price) {
     return params;
 }
 
+// Adds all places sent to client to the database of restaurants
+function addToDB(places) {
+    for (var index=0; index < places.length; index++) {
+        var place = places[index];
+        var entry = {
+            "place_id": place.place_id,
+            "name": place.name,
+            "address": place.vicinity,
+            "phonenumber": undefined,
+            "rating": undefined,
+            "price": undefined,
+            "cuisine": undefined,
+            "rating": undefined,
+            "comments": [],
+        };
+        addRestaurant(entry).catch(function(e) {
+            console.log(`Failed to add restaurant to DB: ${e}`);
+            return
+        })
+    }
+    return
+}
+
 // Finds a nearby place given a query
 export async function find(req, res) {
     // Get email from query
@@ -102,6 +125,8 @@ export async function find(req, res) {
         console.log(`Failed to get a email from headers`);
         return res.status(400).send(`Failed to get email from headers`);
     }
+
+    console.log(req.query);
 
     // Get user from email
     var user = await User.findOne({ email: req.headers.email })
@@ -119,14 +144,15 @@ export async function find(req, res) {
         return res.status(400).send(`Failed to get location from request`);
     }
 
-    if (!( ("filters" in req.query) || ("foodFilters" in req.query) )) {
-        console.log(`Failed to get a location from Client IP: ${error}`);
-        return res.status(503).send(`Server failed to get a location from Client IP: ${error}`);
+    var filters = [];
+    if ("filters" in req.query) {
+        req.query.filters = JSON.parse(req.query.filters);
     }
-    
-    // Get filters and foodFilters from query
-    var filters = JSON.parse(req.query.filters);
-    var foodFilters = JSON.parse(req.query.foodFilters);
+
+    var foodFilters = [];
+    if ("foodFilters" in req.query) {
+        foodFilters = JSON.parse(req.query.foodFilters);
+    }
 
     var location = `${latitude}, ${longitude}`;
     var radius = getRadius(filters, user.profileInfo);
@@ -171,14 +197,23 @@ export async function find(req, res) {
         return res.status(503).send(`Server failed to get a place from Google API: ${error}`);
     }
 
-    console.log(placeDataRequest.data);
-
     if (placeDataRequest.data.status != "OK") {
         console.log(`Failed to get a place from Google API: ${placeDataRequest.data.status}`);
         return res.status(503).send(`Server failed to get a place from Google API: ${placeDataRequest.data.status}`);
     }
 
-    return res.send(JSON.stringify(placeDataRequest.data.results));
+    // Gets a random place from the list
+    var length = placeDataRequest.data.results.length;
+    if (length == 0) {
+        console.log("No places found");
+        return res.status(503).send("No places found");
+    }
+
+    var N = Math.floor(Math.random() * length);
+    var place = [placeDataRequest.data.results[N]];
+
+    addToDB(place);
+    return res.send(JSON.stringify(place));
 }
 
 // Gets photos given the photo_reference, and maxheight or maxwidth
@@ -212,7 +247,7 @@ export async function getPhoto(req, res) {
             params: params
         });
     } catch(error) {
-        console.log(`Status: ${image_request.status}\nFailed to get a photo from Google API: ${error}`);
+        console.log(`Failed to get a photo from Google API: ${error}`);
         return res.status(503).send(`Server failed to get a photo from Google API: ${error}`);
     }
 
