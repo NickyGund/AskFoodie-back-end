@@ -1,95 +1,90 @@
-import { Mongoose } from "mongoose";
-import {Base, parentCommentSchema, childCommentSchema} from "./comment.schema.js";
+import {parentCommentSchema, childCommentSchema} from "./comment.schema.js";
 import { addParentCommentValidation } from "./comment.validation.js";
 
-//create parent comment
-
+// create a parent comment
 export const addParentComment = async (req, res) => {
+    // Validate that the request is valid
     const {error} = addParentCommentValidation(req.body)
-
-    if(error) {
+    if (error) {
         return res.json({error: true, data: error.details[0].message})
     }
 
-    console.log(req.body)
+    // Add the comment and return the comment data to the client
     try{
         const parentComment = await parentCommentSchema.create(req.body)
-        res.json({error: false, data: parentComment.toJSON()})
-    }
-    catch(e){
-        res.json({error: true, data: e})
+        return res.json({error: false, data: parentComment.toJSON()})
+    } catch (e) {
+        return res.json({error: true, data: e})
     }
 }
 
+// DEPRECATED
+// create a comment of a comment
 export const addChildComment = async (req, res) => {
-  console.log(req.body);
-  try {
-    const childComment = await childCommentSchema.create(req.body);
-    res.json({ error: false, data: childComment.toJSON() });
-  } catch (e) {
-    res.json({ error: true, data: e });
-  }
-};
+    try {
+        const childComment = await childCommentSchema.create(req.body);
+        return res.json({ error: false, data: childComment.toJSON() });
+    } catch (e) {
+        return res.json({ error: true, data: e });
+    }
+}
 
+// Searches for comments given the name of a user
 export const findComments = async (req, res) => {
-  var commentRequest;
-  try {
-    //getParentComment
-    commentRequest = await parentCommentSchema.find({
-      poster: req.query.poster,
-    });
-    //console.log(res.data);
-    console.log(commentRequest);
-    return res.json({ data: commentRequest });
-  } catch (error) {
-    console.log(`Failed to get commments from the backend: ${error}`);
-    res.json({ error: true, data: error });
-  }
+    var commentRequest;
+    try {
+        // Search for comments
+        commentRequest = await parentCommentSchema.find({
+            poster: req.query.poster,
+        });
+        return res.json({ data: commentRequest });
+    } catch (error) {
+        console.log(`Failed to get commments from the backend: ${error}`);
+        return res.json({ error: true, data: error });
+    }
 };
 
+// DEPRECATED
+// Searches for child comments given a comment
 export const findChildComments = async (req, res) => {
-  var childCommentRequest;
-  console.log(req.query.parent);
-  try {
-    //getChildComment
-    childCommentRequest = await childCommentSchema.find({
-      parent: req.query.parent,
-    });
-    console.log(childCommentRequest);
-    console.log({ data: childCommentRequest });
-    return res.json({ data: childCommentRequest });
-  } catch (error) {
-    console.log(`Failed to get child commments from the backend: ${error}`);
-    res.json({ error: true, data: error });
-  }
+    var childCommentRequest;
+    try {
+        // Searches for child comments
+        childCommentRequest = await childCommentSchema.find({
+            parent: req.query.parent,
+        });
+        return res.json({ data: childCommentRequest });
+    } catch (error) {
+        console.log(`Failed to get child commments from the backend: ${error}`);
+        res.json({ error: true, data: error });
+    }
 };
 
+// Searches for comments given a restaurant id
 export const findRestaurantComments = async (req, res) => {
-  var commentRequest;
-  try {
-    //getParentComment
-    commentRequest = await parentCommentSchema.find({
-      restaurant: req.query.restaurant,
-    });
-    //console.log(res.data);
-    console.log(commentRequest);
-    return res.json({ data: commentRequest });
-  } catch (error) {
-    console.log(`Failed to get commments from the backend: ${error}`);
-    res.json({ error: true, data: error });
-  }
+    var commentRequest;
+    try {
+        // Gets comments
+        commentRequest = await parentCommentSchema.find({
+            restaurant: req.query.restaurant,
+        });
+        return res.json({ data: commentRequest });
+    } catch (error) {
+        console.log(`Failed to get commments from the backend: ${error}`);
+        res.json({ error: true, data: error });
+    }
 };
 
+// Deletes a comment given the id, includes both child and parent comments
 export const deleteComment = async (req, res) => {
-  try {
-    //getParentComment
-    await parentCommentSchema.deleteOne({
-      _id: req.query.id,
-    });
-    //console.log(res.data);
-    return res.json({ error: false });
-  } catch (error) {
-    console.log(`Failed to get commments from the backend: ${error}`);
-    res.json({ error: true, data: error });
-  }
+    try {
+        // Deletes a comment
+        await parentCommentSchema.deleteOne({
+            _id: req.query.id,
+        });
+        return res.json({ error: false });
+    } catch (error) {
+        console.log(`Failed to get commments from the backend: ${error}`);
+        res.json({ error: true, data: error });
+    }
 };
