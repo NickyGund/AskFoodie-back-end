@@ -3,25 +3,8 @@ import {addRestaurantValidation} from "./restaurant.validation.js"
 
 
 // create new restaurant 
-<<<<<<< HEAD
-
-export const addRestaurant = async (req, res) => {
-    const {error} = addRestaurantValidation(req.body)
-
-    if(error) {
-        return res.json({error: true, data: error.details[0].message})
-    }
-
-    console.log(req.body)  
-=======
 export const addRestaurant = async (restaurant_data) => {
->>>>>>> master
     try{
-        const {error} = addRestaurantValidation(restaurant_data)
-        if(error) {
-            throw(error)
-        }
-
 <<<<<<< HEAD
     const restaurant = await Restaurant.create(req.body)
     res.json({error: false, data: restaurant.toJSON()})
@@ -30,6 +13,11 @@ catch(e){
     res.json({error: true, data: e})
 }
 =======
+        const {error} = addRestaurantValidation(restaurant_data)
+        if(error) {
+            throw(error)
+        }
+
         await Restaurant.updateOne(
             {
                 "place_id": restaurant_data.place_id
@@ -42,7 +30,20 @@ catch(e){
     } catch(e) {
         throw(e)
     }
->>>>>>> master
+}
+
+export const findRestaurant = async (req, res) => {
+    var restaurantRequest;
+    console.log(req.body)
+    try{
+        restaurantRequest = await Restaurant.find({});
+        console.log(restaurantRequest)
+        return res.json({data:restaurantRequest});
+    }catch(error){
+        console.log(`Failed to get restaurants from the backend: ${error}`);  
+        res.json({error: true, data: error})
+    }
+>>>>>>> f14edd8b972012bd5876b594c82981c5ac5d253b
 }
 
 export const findRestaurant = async (req, res) => {
