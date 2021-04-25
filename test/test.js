@@ -34,7 +34,7 @@ var parent_comment_datas = [];
 // Removes the test database data
 function cleanup() {
     // Connect to DB
-    mongoose.connect('mongodb://localhost:27017/Ask-Foodie-DB', {
+    mongoose.connect("mongodb://localhost:27017/Ask-Foodie-DB", {
         useNewUrlParser: true,
         useCreateIndex: true,
         useUnifiedTopology: true
@@ -46,8 +46,6 @@ function cleanup() {
         Restaurant.deleteMany({ place_id: {$in: test_place_ids} }),
         Restaurant.deleteMany({ name: {$in: test_place_names} }),
         parentCommentSchema.deleteMany({ poster: "userName0" }),
-        parentCommentSchema.deleteMany({ restaurant: {$in: test_place_names} }),
-        //TODO remove comments from db
     ])
         .then(function(values) {
             // Disconnect from DB after all test data is removed
@@ -104,11 +102,9 @@ describe("User Controller", function() {
                 .post("/api/register")
                 .send(params)
                 .end(function(err, res) {
-                    // Should respond status 200 and have the error in the body
-                    chai.expect(res).status(200);
+                    // Should respond status 401
+                    chai.expect(res).status(401);
                     chai.expect(res).ownProperty("body");
-                    chai.expect(res.body).ownProperty("error");
-                    chai.expect(res.body.error).equal(true);
                     chai.expect(res.body).ownProperty("data");
                     chai.expect(res.body.data).equal("email already exists.");
                     done();
@@ -130,11 +126,9 @@ describe("User Controller", function() {
                 .post("/api/register")
                 .send(params)
                 .end(function(err, res) {
-                    // Should respond status 200 and have the error in the body
-                    chai.expect(res).status(200);
+                    // Should respond status 401
+                    chai.expect(res).status(401);
                     chai.expect(res).ownProperty("body");
-                    chai.expect(res.body).ownProperty("error");
-                    chai.expect(res.body.error).equal(true);
                     chai.expect(res.body).ownProperty("data");
                     chai.expect(res.body.data.name).equal("MongoError");
                     chai.expect(res.body.data.code).equal(11000);
@@ -157,11 +151,9 @@ describe("User Controller", function() {
                 .post("/api/register")
                 .send(params)
                 .end(function(err, res) {
-                    // Should respond status 200 and have the error in the body
-                    chai.expect(res).status(200);
+                    // Should respond status 400
+                    chai.expect(res).status(400);
                     chai.expect(res).ownProperty("body");
-                    chai.expect(res.body).ownProperty("error");
-                    chai.expect(res.body.error).equal(true);
                     chai.expect(res.body).ownProperty("data");
                     chai.expect(res.body.data).equal("\"email\" must be a valid email");
                     done();
@@ -178,6 +170,7 @@ describe("User Controller", function() {
                 password: "password1",
             };
 
+            this.timeout(10000);
             chai
                 .request(app)
                 .post("/api/register")
@@ -191,11 +184,21 @@ describe("User Controller", function() {
 
                     admin_login_data = res.body.data;
 
-                    User.findByIdAndUpdate(admin_login_data._id, { admin: true })
-                        .then(done)
-                        .catch(function(error) {
-                            fail(error.message);
-                        });
+                    // Connect to DB
+                    mongoose.connect("mongodb://localhost:27017/Ask-Foodie-DB", {
+                        useNewUrlParser: true,
+                        useCreateIndex: true,
+                        useUnifiedTopology: true
+                    })
+
+                    // Then, find the currently registerred user and set as an admin
+                    User.findByIdAndUpdate(admin_login_data._id, { admin: true }, function(err, _) {
+                        if (err) {
+                            fail(err);
+                        } else {
+                            done();
+                        }
+                    });
                 });
         });
     });
@@ -217,8 +220,6 @@ describe("User Controller", function() {
                     // Response should have status 200, and have respond with the login data
                     chai.expect(res).status(200);
                     chai.expect(res).ownProperty("body");
-                    chai.expect(res.body).ownProperty("error");
-                    chai.expect(res.body.error).equal(false);
                     chai.expect(res.body).ownProperty("data");
                     chai.expect(res.body.data).ownProperty("token");
                     login_data = res.body.data;
@@ -239,11 +240,9 @@ describe("User Controller", function() {
                 .post("/api/login")
                 .send(params)
                 .end(function(err, res) {
-                    // Response should have status 200, and respond with an error
-                    chai.expect(res).status(200);
+                    // Response should have status 401, and respond with an error
+                    chai.expect(res).status(401);
                     chai.expect(res).ownProperty("body");
-                    chai.expect(res.body).ownProperty("error");
-                    chai.expect(res.body.error).equal(true);
                     chai.expect(res.body).ownProperty("data");
                     chai.expect(res.body.data).equal("cannot find email");
                     done();
@@ -262,11 +261,9 @@ describe("User Controller", function() {
                 .post("/api/login")
                 .send(params)
                 .end(function(err, res) {
-                    // Response should have status 200, and respond with an incorrect password error
-                    chai.expect(res).status(200);
+                    // Response should have status 401, and respond with an error
+                    chai.expect(res).status(401);
                     chai.expect(res).ownProperty("body");
-                    chai.expect(res.body).ownProperty("error");
-                    chai.expect(res.body.error).equal(true);
                     chai.expect(res.body).ownProperty("data");
                     chai.expect(res.body.data).equal("incorrect password");
                     done();
@@ -324,7 +321,7 @@ describe("User Controller", function() {
         });
         
         // T10 Tests updating profile data with missing parameters
-        it("should pass with missing params", function(done) {
+        it("should fail with missing params", function(done) {
             const params = {
                 // Removed parameters
             }
@@ -336,10 +333,8 @@ describe("User Controller", function() {
                 .set("Authorization", `Bearer ${login_data.token}`)
                 .send(params)
                 .end(function(err, res) {
-                    // Should respond with status 200 and have data in the body
-                    chai.expect(res).status(200);
-                    chai.expect(res).ownProperty("body");
-                    chai.expect(res.body).ownProperty("data");
+                    // Should respond with status 400
+                    chai.expect(res).status(400);
                     done();
                 });
         });
@@ -415,7 +410,7 @@ describe("Auth", function() {
         });
         
         // T15 Tests if the add comment endpoint requires auth
-        it("photos should fail without auth", function(done) {
+        it("add comments should fail without auth", function(done) {
             const params = {}
 
             chai
@@ -430,7 +425,7 @@ describe("Auth", function() {
         });
         
         // T16 Tests if the find comments endpoint requires auth
-        it("photos should fail without auth", function(done) {
+        it("find comments should fail without auth", function(done) {
             const params = {}
 
             chai
@@ -450,7 +445,7 @@ describe("Auth", function() {
 
             chai
                 .request(app)
-                .post("/api/deleteComments")
+                .post("/api/deleteComment")
                 .send(params)
                 .end(function(err, res) {
                     // Should respond with a bad request status
@@ -481,7 +476,7 @@ describe("Auth", function() {
             chai
                 .request(app)
                 .get("/")
-                .set("email", test_emails[2])
+                .set("email", 'a')
                 .set("Authorization", `Bearer ${login_data.token}`)
                 .end(function(err, res) {
                     // Should have status 401
@@ -779,7 +774,8 @@ describe("Comment Controller", function() {
         // T24 Tests adding a comment normally
         it("should post a comment", function(done) {
             const params = {
-                restaurant: restaurant_data.name,
+                poster: login_data.userName,
+                restaurant: restaurant_data._id,
                 content: "Comment 0"
             };
 
@@ -793,8 +789,7 @@ describe("Comment Controller", function() {
                     // Expects a success and the comment data
                     chai.expect(res).status(200);
                     chai.expect(res).ownProperty("body");
-                    chai.expect(res.body).ownProperty("error");
-                    chai.expect(res.body.error).equal(false);
+                    chai.expect(res.body).ownProperty("data");
                     parent_comment_datas.push(res.body.data);
                     done();
                 });
@@ -803,7 +798,8 @@ describe("Comment Controller", function() {
         // T25 Tests adding a comment with the same data as the previous test
         it("should post a duplicate", function(done) {
             const params = {
-                restaurant: restaurant_data.name,
+                poster: login_data.userName,
+                restaurant: restaurant_data._id,
                 content: "Comment 0"
             };
 
@@ -817,8 +813,7 @@ describe("Comment Controller", function() {
                     // Expects a success
                     chai.expect(res).status(200);
                     chai.expect(res).ownProperty("body");
-                    chai.expect(res.body).ownProperty("error");
-                    chai.expect(res.body.error).equal(false);
+                    chai.expect(res.body).ownProperty("data");
                     parent_comment_datas.push(res.body.data);
                     done();
                 });
@@ -827,7 +822,8 @@ describe("Comment Controller", function() {
         // T26 Tests adding a comment without content
         it("should fail without comment", function(done) {
             const params = {
-                restaurant: restaurant_data.name,
+                poster: login_data.userName,
+                restaurant: restaurant_data._id,
             };
 
             chai
@@ -837,11 +833,8 @@ describe("Comment Controller", function() {
                 .set("Authorization", `Bearer ${login_data.token}`)
                 .send(params)
                 .end(function(err, res) {
-                    // Expects status 200 and error in body
-                    chai.expect(res).status(200);
-                    chai.expect(res).ownProperty("body");
-                    chai.expect(res.body).ownProperty("error");
-                    chai.expect(res.body.error).equal(true);
+                    // Expects status 400
+                    chai.expect(res).status(400);
                     done();
                 });
         });
@@ -849,6 +842,7 @@ describe("Comment Controller", function() {
         // T27 Tests adding a comment without a restaurant
         it("should post with no restaurant", function(done) {
             const params = {
+                poster: login_data.userName,
                 content: "Comment 0"
             };
 
@@ -871,7 +865,8 @@ describe("Comment Controller", function() {
         // T__ Tests adding a comment with an invalid restaurant
         it("should fail with an invalid restaurant", function(done) {
             const params = {
-                restaurant: test_place_names[2],
+                poster: login_data.userName,
+                restaurant: 'a',
                 content: "Comment 0"
             };
 
@@ -882,11 +877,49 @@ describe("Comment Controller", function() {
                 .set("Authorization", `Bearer ${login_data.token}`)
                 .send(params)
                 .end(function(err, res) {
-                    // Expects status 200 and error in body
-                    chai.expect(res).status(200);
-                    chai.expect(res).ownProperty("body");
-                    chai.expect(res.body).ownProperty("error");
-                    chai.expect(res.body.error).equal(true);
+                    // Expects status 400
+                    chai.expect(res).status(400);
+                    done();
+                });
+        });
+
+        // T__ Tests adding a comment with an invalid poster
+        it("should fail with an invalid poster", function(done) {
+            const params = {
+                poster: 'a',
+                restaurant: restaurant_data._id,
+                content: "Comment 0"
+            };
+
+            chai
+                .request(app)
+                .post("/api/addParentComment")
+                .set("email", login_data.email)
+                .set("Authorization", `Bearer ${login_data.token}`)
+                .send(params)
+                .end(function(err, res) {
+                    // Expects status 400
+                    chai.expect(res).status(400);
+                    done();
+                });
+        });
+
+        // T__ Tests adding a comment with an missing poster
+        it("should fail with a missing poster", function(done) {
+            const params = {
+                restaurant: restaurant_data._id,
+                content: "Comment 0"
+            };
+
+            chai
+                .request(app)
+                .post("/api/addParentComment")
+                .set("email", login_data.email)
+                .set("Authorization", `Bearer ${login_data.token}`)
+                .send(params)
+                .end(function(err, res) {
+                    // Expects status 400
+                    chai.expect(res).status(400);
                     done();
                 });
         });
@@ -907,10 +940,9 @@ describe("Comment Controller", function() {
                 .set("Authorization", `Bearer ${login_data.token}`)
                 .query(params)
                 .end(function(err, res) {
-                    // Should give status 200, no error in body, and the array of comments
+                    // Should give status 200, and the array of comments
                     chai.expect(res).status(200);
                     chai.expect(res).ownProperty("body");
-                    chai.expect(res.body).not.ownProperty("error");
                     chai.expect(res.body).ownProperty("data");
                     chai.expect(res.body.data).an("array");
                     chai.expect(res.body.data).not.empty;
@@ -929,11 +961,8 @@ describe("Comment Controller", function() {
                 .set("Authorization", `Bearer ${login_data.token}`)
                 .query(params)
                 .end(function(err, res) {
-                    // Should have status 200 with error in body
-                    chai.expect(res).status(200);
-                    chai.expect(res).ownProperty("body");
-                    chai.expect(res.body).ownProperty("error");
-                    chai.expect(res.body.error).equal(true);
+                    // Should have status 400
+                    chai.expect(res).status(400);
                     done();
                 });
         });
@@ -941,7 +970,7 @@ describe("Comment Controller", function() {
         // T30 Tests finding comments of a poster that has no comments
         it("should get no comments with poster that has no comments", function(done) {
             const params = {
-                poster: test_comment_posters[1],
+                poster: admin_login_data.userName,
             };
 
             chai
@@ -953,8 +982,6 @@ describe("Comment Controller", function() {
                 .end(function(err, res) {
                     // Should not error
                     chai.expect(res).status(200);
-                    chai.expect(res).ownProperty("body");
-                    chai.expect(res.body).not.ownProperty("error");
                     done();
                 });
         });
@@ -962,7 +989,7 @@ describe("Comment Controller", function() {
         // T31 Tests finding comments of an invalid poster
         it("should get no comments with invalid poster", function(done) {
             const params = {
-                poster: test_comment_posters[1],
+                poster: admin_login_data.userName,
             };
 
             chai
@@ -974,8 +1001,6 @@ describe("Comment Controller", function() {
                 .end(function(err, res) {
                     // Should not error
                     chai.expect(res).status(200);
-                    chai.expect(res).ownProperty("body");
-                    chai.expect(res.body).not.ownProperty("error");
                     done();
                 });
         });
@@ -996,11 +1021,8 @@ describe("Comment Controller", function() {
                 .set("Authorization", `Bearer ${admin_login_data.token}`)
                 .query(params)
                 .end(function(err, res) {
-                    // Should give status 200, no error in body
+                    // Should give status 200
                     chai.expect(res).status(200);
-                    chai.expect(res).ownProperty("body");
-                    chai.expect(res.body).ownProperty("error");
-                    chai.expect(res.body.error).equal(false);
                     done();
                 });
         });
@@ -1035,11 +1057,8 @@ describe("Comment Controller", function() {
                 .set("Authorization", `Bearer ${admin_login_data.token}`)
                 .query(params)
                 .end(function(err, res) {
-                    // Should give status 200, no error in body
+                    // Should give status 200
                     chai.expect(res).status(200);
-                    chai.expect(res).ownProperty("body");
-                    chai.expect(res.body).ownProperty("error");
-                    chai.expect(res.body.error).equal(false);
                     done();
                 });
         });

@@ -8,7 +8,7 @@ export const login = async (req, res) => {
 
     // If the login has errored, return an error
     if(error) {
-        return res.json({error: true, data: error.details[0].message})
+        return res.status(401).json({error: true, data: error.details[0].message})
     }
 
     const {email, password} = req.body;
@@ -16,7 +16,7 @@ export const login = async (req, res) => {
         // Try to find a user associated with the email
         const user = await User.findOne({email});
         if(!user) {
-            return res.json({error: true, data: "cannot find email"})
+            return res.status(401).json({error: true, data: "cannot find email"})
         }
 
         // Match the password
@@ -24,7 +24,7 @@ export const login = async (req, res) => {
         await user.updateOne({signedIn:true})
         res.json({error: false, data: user.toJSON()})
     } catch(e) {
-        return res.json({error: true, data: e});
+        return res.status(401).json({error: true, data: e});
     }
 }
 
@@ -33,13 +33,13 @@ export const register = async (req, res) => {
     // Validate the login info
     const {error} = registerValidation(req.body)
     if(error) {
-        return res.json({error: true, data: error.details[0].message})
+        return res.status(400).json({error: true, data: error.details[0].message})
     }
 
     // Ensure that there is no existing account under the same email
     const emailExist = await User.findOne({email: req.body.email})
     if(emailExist){
-        return res.json({error: true, data: "email already exists."})
+        return res.status(401).json({error: true, data: "email already exists."})
     }
 
     // Create new user and return the user data
@@ -47,7 +47,7 @@ export const register = async (req, res) => {
         const user = await User.create(req.body)
         res.json({error: false, data: user.toJSON()})
     } catch(e) {
-        res.json({error: true, data: e})
+        res.status(401).json({error: true, data: e})
     }
 }
 
@@ -60,11 +60,11 @@ export const checkAuth = async (req, res) => {
 
         // Return "wrong token" or the user data
         if(!user){
-            return res.json({error: true, data: 'wrong token'});
+            return res.status(401).json({error: true, data: 'wrong token'});
         }
         return res.json({error: false, data: user})
     } catch(e) {
-        return res.json({error: true, data: e});
+        return res.status(400).json({error: true, data: e});
     }
 }
 
@@ -102,7 +102,7 @@ export const checkUserName = async (req, res) => {
             return res.json({error: false, exists: false})
         }
     } catch (e) {
-        return res.json({ error: true, data: e.message })
+        return res.status(400).json({ error: true, data: e.message })
     }
 }
 
@@ -112,7 +112,7 @@ export const checkEmail = async (req, res) => {
         // Checks if the email format is valid
         const { error } = emailValidation(req.params)
         if (error) {
-            return res.json({ error: true, data: error.details[0].message });
+            return res.status(400).json({ error: true, data: error.details[0].message });
         }
         const existingEmail = await User.findOne({email: req.params.email})
 
@@ -123,6 +123,6 @@ export const checkEmail = async (req, res) => {
             return res.json({error: false, exists: false})
         }
     } catch (e) {
-        return res.json({ error: true, data: e.message })
+        return res.status(401).json({ error: true, data: e.message })
     }
 }

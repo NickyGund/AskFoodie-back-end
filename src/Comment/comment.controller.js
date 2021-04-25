@@ -6,7 +6,7 @@ export const addParentComment = async (req, res) => {
     // Validate that the request is valid
     const {error} = addParentCommentValidation(req.body)
     if (error) {
-        return res.json({error: true, data: error.details[0].message})
+        return res.status(400).json({error: true, data: error.details[0].message})
     }
 
     // Add the comment and return the comment data to the client
@@ -14,7 +14,7 @@ export const addParentComment = async (req, res) => {
         const parentComment = await parentCommentSchema.create(req.body)
         return res.json({error: false, data: parentComment.toJSON()})
     } catch (e) {
-        return res.json({error: true, data: e})
+        return res.status(400).json({error: true, data: e})
     }
 }
 
@@ -25,7 +25,7 @@ export const addChildComment = async (req, res) => {
         const childComment = await childCommentSchema.create(req.body);
         return res.json({ error: false, data: childComment.toJSON() });
     } catch (e) {
-        return res.json({ error: true, data: e });
+        return res.status(400).json({ error: true, data: e });
     }
 }
 
@@ -40,7 +40,7 @@ export const findComments = async (req, res) => {
         return res.json({ data: commentRequest });
     } catch (error) {
         console.log(`Failed to get commments from the backend: ${error}`);
-        return res.json({ error: true, data: error });
+        return res.status(400).json({ error: true, data: error });
     }
 };
 
@@ -56,7 +56,7 @@ export const findChildComments = async (req, res) => {
         return res.json({ data: childCommentRequest });
     } catch (error) {
         console.log(`Failed to get child commments from the backend: ${error}`);
-        res.json({ error: true, data: error });
+        res.status(400).json({ error: true, data: error });
     }
 };
 
@@ -71,7 +71,7 @@ export const findRestaurantComments = async (req, res) => {
         return res.json({ data: commentRequest });
     } catch (error) {
         console.log(`Failed to get commments from the backend: ${error}`);
-        res.json({ error: true, data: error });
+        res.status(400).json({ error: true, data: error });
     }
 };
 
@@ -85,6 +85,6 @@ export const deleteComment = async (req, res) => {
         return res.json({ error: false });
     } catch (error) {
         console.log(`Failed to get commments from the backend: ${error}`);
-        res.json({ error: true, data: error });
+        res.status(400).json({ error: true, data: error });
     }
 };

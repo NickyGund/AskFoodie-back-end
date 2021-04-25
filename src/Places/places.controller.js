@@ -114,8 +114,7 @@ function addToDB(places) {
             "rating": undefined,
             "price": undefined,
             "cuisine": undefined,
-            "rating": undefined,
-            "comments": [],
+            "rating": undefined
         };
         addRestaurant(entry).catch(function(e) {
             console.log(`Failed to add restaurant to DB: ${e}`);

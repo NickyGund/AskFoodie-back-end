@@ -32,6 +32,6 @@ export const findRestaurant = async (req, res) => {
         return res.json({data:restaurantRequest});
     } catch(error){
         console.log(`Failed to get restaurants from the backend: ${error}`);  
-        res.json({error: true, data: error})
+        res.status(400).json({error: true, data: error})
     }
 }
