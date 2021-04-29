@@ -152,7 +152,7 @@ export async function find(req, res) {
     // Get filters from query
     var filters = [];
     if ("filters" in req.query) {
-        req.query.filters = JSON.parse(req.query.filters);
+        filters = JSON.parse(req.query.filters);
     }
 
     // Get food filters from query
