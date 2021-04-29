@@ -125,23 +125,33 @@ export const checkEmail = async (req, res) => {
 export const addLike = async (req, res) => {
   try {
     //getParentComment
-    await User.updateOne(
-      { userName: req.body.userName },
-      { $push: { likes: req.body.restaurant } }
-    );
+    console.log(req.body.userName);
+    const user = User.findOne({ userName: req.body.userName });
+    const likes = await user.select("likes");
+    console.log(likes);
+    if (!likes.likes.includes(req.body.restaurant)) {
+      await User.updateOne(
+        { userName: req.body.userName },
+        { $push: { likes: req.body.restaurant } }
+      );
+    }
     return res.json({ error: false });
   } catch (error) {
+    console.log(error);
     res.json({ error: true, data: error });
   }
 };
 
 export const addDislike = async (req, res) => {
   try {
-    //getParentComment
-    await User.updateOne(
-      { userName: req.body.userName },
-      { $push: { dislikes: req.body.restaurant } }
-    );
+    const user = User.findOne({ userName: req.query.userName });
+    const dislikes = await user.select("dislikes");
+    if (!dislikes.dislikes.includes(req.body.restaurant)) {
+      await User.updateOne(
+        { userName: req.body.userName },
+        { $push: { dislikes: req.body.restaurant } }
+      );
+    }
     return res.json({ error: false });
   } catch (error) {
     res.json({ error: true, data: error });
