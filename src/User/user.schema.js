@@ -64,6 +64,10 @@ const userSchema = new Schema(
       type: Array,
       required: [false],
     },
+    friends: [{
+      //string of usernames
+      type: String,
+    }]
   },
   { timestamps: true, strict: false }
 );
@@ -99,6 +103,7 @@ userSchema.methods = {
       signedIn: this.signedIn,
       email: this.email,
       admin: this.admin,
+      friends: this.friends
     };
   },
 

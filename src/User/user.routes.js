@@ -11,6 +11,9 @@ import {
   addDislike,
   getLikes,
   getDislikes,
+  getUserInfo,
+  findUsers,
+  addFriend
 } from "./user.controller.js";
 
 const secret = "This is my secret";
@@ -26,5 +29,8 @@ routes.post("/addLike", addLike);
 routes.post("/addDislike", addDislike);
 routes.get("/getLikes", getLikes);
 routes.get("/getDislikes", getDislikes);
+routes.get('/getUserInfo', getUserInfo);
+routes.get('/findUsers', findUsers);
+routes.post('/addFriend', addFriend);
 
 export default routes;

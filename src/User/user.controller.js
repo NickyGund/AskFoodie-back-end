@@ -181,3 +181,45 @@ export const getDislikes = async (req, res) => {
     res.json({ error: true, data: error });
   }
 };
+
+export const getUserInfo = async (req, res) => {
+  var userinfoRequest;
+  console.log(req.query)
+  try {
+    userinfoRequest = await User.find({
+      userName: req.query.userName,
+    });
+    console.log(userinfoRequest)
+
+    return res.json({data:userinfoRequest});
+  } catch (error) {
+    console.log(`Failed to get user info: ${error}`);  
+    res.json({error: true, data: error})
+  }
+}
+
+export const findUsers = async (req, res) => {
+  var userRequest;
+  console.log(req.body)
+  try {
+    userRequest = await User.find({});
+    console.log(userRequest)
+    return res.json({data:userRequest});
+  } catch (error) {
+    console.log(`Failed to get users from the backend: ${error}`); 
+    res.json({error:true, data:error})
+  }
+}
+
+export const addFriend = async (req, res) => {
+  var friendRequest;
+  console.log(req.body)
+  try {
+    friendRequest = await User.findOneAndUpdate({"userName": req.body.userName}, {$addToSet: {friends: req.body.friends}} );
+    console.log(friendRequest)
+    return res.send({error: false, data: friendRequest});
+  } catch(error) {
+    console.log(`Failed to get users from the backend: ${error}`); 
+    res.json({error:true, data:error})
+  }
+}
