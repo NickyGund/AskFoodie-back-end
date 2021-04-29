@@ -56,8 +56,11 @@ const userSchema = new Schema({
       type: Boolean,
       default:false,
       required: [true]
-    }
-
+    },
+    friends: [{
+      //string of usernames
+      type: String,
+    }]
    
 }, {timestamps: true, strict:false});
 
@@ -93,7 +96,8 @@ userSchema.methods = {
             token: jwt.sign({sub: this._id}, SECRET),
             signedIn: this.signedIn,
             email: this.email,
-            admin: this.admin
+            admin: this.admin,
+            friends: this.friends
         }
     },
 
