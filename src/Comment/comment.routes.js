@@ -1,5 +1,4 @@
 import { Router } from "express";
-import { findRestaurant } from "../Restaurant/restaurant.controller.js";
 import {
   addChildComment,
   addParentComment,
@@ -11,10 +10,11 @@ import {
 
 const routes = new Router();
 
+// Setup the endpoints for the comments system
 routes.post("/addParentComment", addParentComment);
-routes.post("/addChildComment", addChildComment);
+//DEPRECATED    routes.post("/addChildComment", addChildComment);
 routes.get("/findComments", findComments);
-routes.get("/findChildComments", findChildComments);
+//DEPRECATED    routes.get("/findChildComments", findChildComments);
 routes.get("/findCommentsForRestaurant", findRestaurantComments);
 routes.get("/deleteComment", deleteComment);
 

@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 
 const {Schema} = mongoose
 
+// Schema for the restaurant model
 const restaurantSchema = new Schema({
     place_id:{
         type: String,
@@ -34,31 +35,31 @@ const restaurantSchema = new Schema({
         type: String,
         trim: true
     },
-    comments: [{
-        //objectid of comment
-        type: String,
-        
-    }]
+    comments: [
+        {
+            //objectid of comment
+            type: String,
+        }
+    ]
 
 }, {timestamps: true, strict:false});
 
+// Methods for a restaurant model
+restaurantSchema.methods = {
+    // Converts the model to json
+    toJSON(){
+        return {
+            _id: this._id,
+            place_id: this.place_id,
+            name: this.name,
+            address: this.address,
+            phonenumber: this.phonenumber,
+            price: this.price,
+            cuisine: this.cuisine,
+            rating: this.rating,
+            comments: this.comments
+        }
+    },
+}
 
-    restaurantSchema.methods = {
-        toJSON(){
-            return {
-                _id: this._id,
-                place_id: this.place_id,
-                name: this.name,
-                address: this.address,
-                phonenumber: this.phonenumber,
-                price: this.price,
-                cuisine: this.cuisine,
-                rating: this.rating,
-                comments: this.comments
-
-            }
-        },
-    }
-
-    export default mongoose.model('Restaurant', restaurantSchema);
-
+export default mongoose.model('Restaurant', restaurantSchema);

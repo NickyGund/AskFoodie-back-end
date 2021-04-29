@@ -8,9 +8,12 @@ const nearbysearchURL =
   "https://maps.googleapis.com/maps/api/place/nearbysearch";
 const getPhotoURL = "https://maps.googleapis.com/maps/api/place/photo";
 
+// Generate the keyword for the google api request given food filters and profile info
 function getKeyword(foodFilters, profileInfo) {
+  // If food filters exist, get keyword from food filters
   if (foodFilters.length > 1) {
     var foodTypes = `${foodFilters[0]}`;
+    // Iterate through food filters to generate string
     for (var index = 1; index < foodFilters.length; index++) {
       var filterItem = foodFilters[index];
       foodTypes += ` OR ${filterItem}`;
@@ -20,6 +23,7 @@ function getKeyword(foodFilters, profileInfo) {
     return `${foodFilters[0]}`;
   }
 
+  // If there are no food filters, rely on profile info
   if ("foodTypes" in profileInfo && profileInfo.foodTypes.length > 0) {
     var foodTypes = profileInfo.foodTypes.join(" OR ");
     return `${foodTypes}`;
@@ -28,6 +32,7 @@ function getKeyword(foodFilters, profileInfo) {
   }
 }
 
+// Convert the string price to an integer for the google api
 function getPrice(filters, profileInfo) {
   // Note 0 is least expensive, 4 is most
   // Front-end sends '$', '$$', and/or '$$$'
@@ -54,7 +59,7 @@ function getPrice(filters, profileInfo) {
 
   if ("price" in profileInfo) {
     // If min price has been specified in profile info
-    if (profileInfo.price == "none") {
+    if ((profileInfo.price == "none") || (profileInfo.price == undefined)) {
       return undefined;
     } else {
       return [profileInfo.price.length - 1, 4];
@@ -64,6 +69,7 @@ function getPrice(filters, profileInfo) {
   }
 }
 
+// Convert the string distances from the filter to integers for the google api
 function getRadius(filters, profileInfo) {
   var distance = 50000;
   for (var index = 0; index < filters.length; index++) {
@@ -79,6 +85,7 @@ function getRadius(filters, profileInfo) {
   return distance;
 }
 
+// Combine the variables to create the parameters for the google request
 function getParams(location, radius, keyword, price) {
   var params = {};
 
@@ -127,8 +134,6 @@ export async function find(req, res) {
     return res.status(400).send(`Failed to get email from headers`);
   }
 
-  console.log(req.query);
-
   // Get user from email
   var user = await User.findOne({ email: req.headers.email });
 
@@ -140,28 +145,30 @@ export async function find(req, res) {
   var latitude = req.query.latitude;
   var longitude = req.query.longitude;
 
+  // If location does not exist, send error to client
   if (isNaN(latitude) || isNaN(longitude)) {
     console.log(`Failed to get a location from request`);
     return res.status(400).send(`Failed to get location from request`);
   }
 
+  // Get filters from query
   var filters = [];
   if ("filters" in req.query) {
-    req.query.filters = JSON.parse(req.query.filters);
+    filters = JSON.parse(req.query.filters);
   }
 
+  // Get food filters from query
   var foodFilters = [];
   if ("foodFilters" in req.query) {
     foodFilters = JSON.parse(req.query.foodFilters);
   }
 
+  // Convert data to strings to be used in the params of the google api request
   var location = `${latitude}, ${longitude}`;
   var radius = getRadius(filters, user.profileInfo);
   var keyword = getKeyword(foodFilters, user.profileInfo);
   var price = getPrice(filters, user.profileInfo);
-
   var params = getParams(location, radius, keyword, price);
-  console.log(params);
 
   var placeDataRequest;
   try {
@@ -195,16 +202,16 @@ export async function find(req, res) {
       params: params,
     });
   } catch (error) {
+    // On an error using the google api, tell client
     console.log(`Failed to get a place from Google API: ${error}`);
     return res
       .status(503)
       .send(`Server failed to get a place from Google API: ${error}`);
   }
 
+  // On a google api error, tell client
   if (placeDataRequest.data.status != "OK") {
-    console.log(
-      `Failed to get a place from Google API: ${placeDataRequest.data.status}`
-    );
+    console.log(`Failed to get a place from Google API: ${placeDataRequest.data.status}`);
     return res
       .status(503)
       .send(

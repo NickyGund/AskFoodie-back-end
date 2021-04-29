@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 
 const { Schema } = mongoose;
-const SECRET = "This is my secret";
+const SECRET = process.env.MY_SECRET;
 
 const userSchema = new Schema(
   {
@@ -72,12 +72,16 @@ const userSchema = new Schema(
   { timestamps: true, strict: false }
 );
 
+// Before saving, hash the password if not hashed
 userSchema.pre("save", function (next) {
   const user = this;
+  
+  // Continue if already hashed
   if (!user.isModified("password")) {
     return next();
   }
 
+  // Hash
   bcrypt.genSalt(10, (err, salt) => {
     if (err) {
       return next(err);
@@ -87,13 +91,16 @@ userSchema.pre("save", function (next) {
       if (err) {
         return next(err);
       }
+      // Update password and continue
       user.password = hash;
       next();
     });
   });
 });
 
+// Methods for the user model
 userSchema.methods = {
+  // Convert a user model to json
   toJSON() {
     return {
       _id: this._id,
@@ -111,19 +118,23 @@ userSchema.methods = {
     return { likes: this.likes };
   },
 
+  // Check if a password is valid
   comparePassword(candidatePassword) {
     const user = this;
 
     return new Promise((resolve, reject) => {
       bcrypt.compare(candidatePassword, user.password, (err, isMatch) => {
+        // Reject if error
         if (err) {
           return reject(err);
         }
 
+        // Reject if mismatch
         if (!isMatch) {
           return reject("incorrect password");
         }
 
+        // Resolve if match
         resolve(true);
       });
     });

@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 
 const {Schema} = mongoose
 
+// Initialize the model to store all comments
 const baseOptions = {
     discriminatorKey: '__type',
     collection: 'Comments',
@@ -9,6 +10,7 @@ const baseOptions = {
 }
 export const Base = mongoose.model('Base', new Schema({}, baseOptions));
 
+// Comments on either a user profile or a restaurant
 export const parentCommentSchema = Base.discriminator('parentComment', new mongoose.Schema({
     poster: {
         //User ObjectID
@@ -23,10 +25,11 @@ export const parentCommentSchema = Base.discriminator('parentComment', new mongo
         type: String,
         require: true,
     },
-
 }));
 
+// Methods to comments
 parentCommentSchema.methods = {
+    // Converts the model to json
     toJSON() {
         return {
             _id: this._id,
@@ -37,6 +40,8 @@ parentCommentSchema.methods = {
     }
 }
 
+// DEPRECATED
+// A comment of a comment
 export const childCommentSchema = Base.discriminator('childComment', new mongoose.Schema({
     poster: {
         //User ObjectID
@@ -56,7 +61,9 @@ export const childCommentSchema = Base.discriminator('childComment', new mongoos
     },
 }));
 
+// Methods for child comments
 childCommentSchema.methods = {
+    // Converts the model to JSON
     toJSON() {
         return {
             _id: this._id,
