@@ -4,6 +4,7 @@ import { find, getPhoto } from "./places.controller.js"
 
 var router = require('express').Router();
 
+// Setup endpoints for the places controller
 router.get("/find", find)
 router.get("/photos", getPhoto)
 

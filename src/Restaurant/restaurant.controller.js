@@ -24,15 +24,14 @@ export const addRestaurant = async (restaurant_data) => {
     }
 }
 
+// find all restaurants in the database
 export const findRestaurant = async (req, res) => {
     var restaurantRequest;
-    console.log(req.body)
     try{
         restaurantRequest = await Restaurant.find({});
-        console.log(restaurantRequest)
         return res.json({data:restaurantRequest});
-    }catch(error){
+    } catch(error){
         console.log(`Failed to get restaurants from the backend: ${error}`);  
-        res.json({error: true, data: error})
+        res.status(400).json({error: true, data: error})
     }
 }
